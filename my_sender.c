@@ -1,7 +1,14 @@
-#include <stdio.h>	// FILE, fopen, fclose, sprintf, printf, fwrite
-#include <stdlib.h>	// malloc, free, NULL
-#include <string.h>	// strcmp, strcpy
-#include <unistd.h>	// F_OK, R_OK
+#include <errno.h>	// ERANGE, errno
+#include <stdio.h>	// FILE, printf, fprintf, sprintf, stderr, sscanf, fopen, fclose, fwrite
+#include <stdlib.h>	// EXIT_FAILURE, EXIT_SUCCESS, NULL, strtol, malloc, free
+#include <string.h>	// strlen, strcmp, strcpy, strerror, memset
+#include <unistd.h>	// F_OK, R_OK, lseek, close, read, write
+#include <limits.h>	// LONG_MAX, LONG_MIN
+#include <sys/stat.h>	// S_ISDIR, stat
+#include <fcntl.h>	// O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, open
+#include <arpa/inet.h> 	// AF_INET, SOCK_STREAM, socket, htons, inet_addr, connect, sockaddr_in
+#include "my_library.h"	// validateIP4Dotted
+
 //
 // Input (arguments):
 // 1) The channel IP
@@ -25,8 +32,97 @@
 // reconstructed: 1710 bytes
 // corrected: 0 errors
 //
-int main (int argc, char *argv[]) {
-	if (argc == 4) {
-		printf("%s %s %s %s\n",argv[0],argv[1],argv[2],argv[3]);
+
+int program_end(int error, int in_fd, int sock_fd) {
+	int res = 0;
+	if ((0 < in_fd)&(close(in_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+		fprintf(stderr,F_ERROR_INPUT_CLOSE_MSG,strerror(errno));
+		res = errno;
 	}
+	if ((0 < sock_fd)&&(close(sock_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+		fprintf(stderr,F_ERROR_SOCKET_CLOSE_MSG,strerror(errno));
+		res = errno;
+	}
+	if ((error != 0)||(res != 0)) {
+		fprintf(stderr,ERROR_EXIT_MSG);
+		if (error != 0) { // If multiple error occurred, Print the error that called 'program_end' function.
+			res = error;
+		}
+	}
+	return res;
+}
+int main (int argc, char *argv[]) {
+	// Function variables
+	int input_port = 0;		// The channel port (type == int)
+	int in_fd = 0;			// The input file 'file descriptor' (FD)
+	int sock_fd = 0;		// The socket file descriptor (FD)
+	char input_port_char[6];	// The channel port (type == string)
+	char* endptr_PORT;		// strtol() for 'input_port'
+	struct sockaddr_in serv_addr;	// The data structure for the channel
+	struct stat in_stat;		// The data structure for the input file
+	// Init variables
+	memset(&serv_addr,'0',sizeof(serv_addr));
+	memset(&serv_addr,'0',sizeof(serv_addr));
+	// Check correct call structure
+	if (argc != 4) {
+		if (argc < 4) {
+			printf(USAGE_OPERANDS_MISSING_MSG,argv[0]);
+		} else {
+			printf(USAGE_OPERANDS_SURPLUS_MSG,argv[0]);
+		}
+		return EXIT_FAILURE;
+	}
+	// Check input IP
+	if (validateIP4Dotted(argv[1]) == -1) { // The function return 0 if input string is a valid IPv4 address, Otherwise return -1
+		printf(IP_INVALID_MSG,argv[1]);
+		return EXIT_FAILURE;
+	}
+	// Check input port
+	input_port = strtol(argv[2],&endptr_PORT,10); // If an underflow occurs. strtol() returns LONG_MIN. If an overflow occurs, strtol() returns LONG_MAX. In both cases, errno is set to ERANGE.
+	if ((errno == ERANGE && (input_port == (int)LONG_MAX || input_port == (int)LONG_MIN)) || (errno != 0 && input_port == 0)) {
+		fprintf(stderr,F_ERROR_FUNCTION_STRTOL_MSG,strerror(errno));
+		return errno;
+	} else if ( (endptr_PORT == argv[2])||(input_port < 1)||(input_port > 65535) ) { // (Empty string) or (not in range [1,65535])
+		printf(PORT_INVALID_MSG);
+		return EXIT_FAILURE;
+	} else if (sprintf(input_port_char,"%d",input_port) < 0) { // sprintf(), If an output error is encountered, a negative value is returned.
+		fprintf(stderr,F_ERROR_FUNCTION_SPRINTF_MSG);
+		return EXIT_FAILURE;
+	} else if (strcmp(input_port_char,argv[2]) != 0) { // Contain invalid chars
+		printf(PORT_INVALID_MSG);
+		return EXIT_FAILURE;
+	}
+	// Check input file - ||We can not assume anything regarding the size of IN.||
+	if ((in_fd = open(argv[3],O_RDONLY)) == -1) { // Upon successful completion, ... return a non-negative integer .... Otherwise, -1 shall be returned and errno set to indicate the error.
+		fprintf(stderr,F_ERROR_INPUT_FILE_MSG,argv[3],strerror(errno)); // IN must exist, otherwise output an error and exit.
+		return program_end(errno,in_fd,sock_fd);
+	} else if (stat(argv[3],&in_stat) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
+		fprintf(stderr,F_ERROR_INPUT_OPEN_MSG,argv[3],strerror(errno));
+		return program_end(errno,in_fd,sock_fd);
+	} else if (S_ISDIR(in_stat.st_mode)) {
+		fprintf(stderr,F_ERROR_INPUT_IS_FOLDER_MSG,argv[3]);
+		return program_end(-1,in_fd,sock_fd);
+	} else if (lseek(in_fd,SEEK_SET,0) == -1) { // Upon successful completion, lseek() returns the resulting offset ... from the beginning of the file. On error, the value (off_t) -1 is returned and errno is set to indicate the error.
+		fprintf(stderr,F_ERROR_FUNCTION_LSEEK_MSG,strerror(errno));
+		return program_end(errno,in_fd,sock_fd);
+	}
+	// Open connection to the channel // Data should be sent via a TCP socket, to the channel specified by IP:PORT.
+	if((sock_fd = socket(AF_INET,SOCK_STREAM,0)) == -1) { // On success, a file descriptor for the new socket is returned. On error, -1 is returned, and errno is set appropriately.
+		fprintf(stderr,F_ERROR_SOCKET_CREATE_MSG,strerror(errno));
+		return program_end(errno,in_fd,sock_fd);
+	}
+	if (DEBUG) {printf("FLAG 0\n");} // TODO XXX DEBUG
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(input_port);
+	serv_addr.sin_addr.s_addr = inet_addr(argv[1]);
+	if (connect(sock_fd,(struct sockaddr*)&serv_addr,sizeof(serv_addr)) == -1) { // Upon successful completion, connect() shall return 0; otherwise, -1 shall be returned and errno set to indicate the error.
+		fprintf(stderr,F_ERROR_SOCKET_CONNECT_MSG,strerror(errno));
+		return program_end(errno,in_fd,sock_fd);
+	}
+	if (DEBUG) {printf("FLAG 1\n");} // TODO XXX DEBUG
+	// All inputs variables are valid, Stsrt working
+	// TODO TODO TODO
+	// Once all data is sent, and the client finished reading and handling any data received from the channel,
+	// The client closes the connection and finishes.
+	return program_end(EXIT_SUCCESS,in_fd,sock_fd);
 }
