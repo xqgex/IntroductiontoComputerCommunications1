@@ -53,22 +53,29 @@ int program_end(int error, int in_fd, int sock_fd) {
 }
 int main (int argc, char *argv[]) {
 	// Function variables
-	int input_port = 0;		// The channel port (type == int)
-	int in_fd = 0;			// The input file 'file descriptor' (FD)
-	int sock_fd = 0;		// The socket file descriptor (FD)
-	char input_port_char[6];	// The channel port (type == string)
-	char* endptr_PORT;		// strtol() for 'input_port'
-	struct sockaddr_in serv_addr;	// The data structure for the channel
-	struct stat in_stat;		// The data structure for the input file
+	int indx = 0;				// TODO XXX
+	int input_port = 0;			// The channel port (type == int)
+	int in_fd = 0;				// The input file 'file descriptor' (FD)
+	int sock_fd = 0;			// The socket file descriptor (FD)
+	int counter_dst = 0;			// The number of bytes we wrote to the channel
+	int counter_src = 0;			// The number of bytes we read from input
+	int padding = 0;			// The amount of padding chars that been have added
+	char read_buf[MAX_BUF+1];		// The string buffer readed from the input
+	char write_buf[MAX_BUF_THEORY+1];	// The string buffer to be sent to the channel
+	char input_port_char[6];		// The channel port (type == string)
+	char* endptr_PORT;			// strtol() for 'input_port'
+	struct sockaddr_in serv_addr;		// The data structure for the channel
+	struct stat in_stat;			// The data structure for the input file
 	// Init variables
-	memset(&serv_addr,'0',sizeof(serv_addr));
+	memset(read_buf,'0',sizeof(read_buf));
+	memset(write_buf,'0',sizeof(write_buf));
 	memset(&serv_addr,'0',sizeof(serv_addr));
 	// Check correct call structure
 	if (argc != 4) {
 		if (argc < 4) {
-			printf(USAGE_OPERANDS_MISSING_MSG,argv[0]);
+			printf(USAGE_OPERANDS_MISSING_MSG,argv[0],"IN");
 		} else {
-			printf(USAGE_OPERANDS_SURPLUS_MSG,argv[0]);
+			printf(USAGE_OPERANDS_SURPLUS_MSG,argv[0],"IN");
 		}
 		return EXIT_FAILURE;
 	}
@@ -120,8 +127,40 @@ int main (int argc, char *argv[]) {
 		return program_end(errno,in_fd,sock_fd);
 	}
 	if (DEBUG) {printf("FLAG 1\n");} // TODO XXX DEBUG
+	write_buf[0] = '\0';
 	// All inputs variables are valid, Stsrt working
-	// TODO TODO TODO
+	while (1) {
+		if (DEBUG) {printf("FLAG 2\n");} // TODO XXX DEBUG
+		// Read input file IN
+		if ((counter_src = read(in_fd,read_buf,MAX_BUF)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
+			fprintf(stderr,F_ERROR_INPUT_READ_MSG,argv[3],strerror(errno));
+			return program_end(errno,in_fd,sock_fd);
+		} else if (counter_src == 0) { // Received EOF, Exit the infinity loop
+			break;
+		}
+		// Calc hamming code (63,57) // TODO
+		padding = 0;
+		while ((padding+1)*HAMMING_FROM <= counter_src) {
+			strncpy(write_buf+(padding*HAMMING_TO),read_buf+(padding*HAMMING_FROM),HAMMING_FROM);
+			for (indx=HAMMING_FROM;indx<HAMMING_TO;indx++) { // TODO
+				write_buf[(padding*HAMMING_TO)+indx] = '0'; // TODO
+			} // TODO
+			padding += 1;
+		}
+		padding *= HAMMING_TO-HAMMING_FROM;
+		if (DEBUG) {printf("FLAG 3 - Read %d chars - %.*s\n",counter_src,counter_src,read_buf);} // TODO XXX DEBUG
+		// Sending data from the input file IN to the server,
+		if ((counter_dst = write(sock_fd,write_buf,counter_src+padding)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
+			fprintf(stderr,F_ERROR_SOCKET_WRITE_MSG,strerror(errno));
+			return program_end(errno,in_fd,sock_fd);
+		} else if (counter_dst == 0) {
+			break;
+		}
+		if (DEBUG) {printf("FLAG 4 - Send %d chars - %.*s\n",counter_dst,counter_dst,write_buf);} // TODO XXX DEBUG
+	}
+	// Close write socket // TODO TODO TODO
+	// Print the response // TODO TODO TODO
+	// Free resources and exit // TODO TODO TODO
 	// Once all data is sent, and the client finished reading and handling any data received from the channel,
 	// The client closes the connection and finishes.
 	return program_end(EXIT_SUCCESS,in_fd,sock_fd);
