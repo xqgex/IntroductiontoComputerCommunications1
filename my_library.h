@@ -9,6 +9,9 @@
 // Define printing strings
 #define IP_INVALID_MSG			"%s is not a valid IPv4 address\n"
 #define PORT_INVALID_MSG		"The port must be a positive integer between 1 to 65535\n"
+#define REPORT_CHANNEL			"sender: %s\nreceiver: %s\n%s bytes flipped %s bits\n"
+#define REPORT_RECEIVER			"received: %d bytes\nwrote: %d bytes\ncorrected: %d errors\n"
+#define REPORT_SENDER			"received: %s bytes\nreconstructed: %s bytes\ncorrected: %s errors\n"
 #define USAGE_OPERANDS_MISSING_MSG	"Missing operands\nUsage: %s <IP> <PORT> <%s>\n"
 #define USAGE_OPERANDS_SURPLUS_MSG	"Too many operands\nUsage: %s <IP> <PORT> <%s>\n"
 #define ERROR_EXIT_MSG			"Exiting...\n"
@@ -30,6 +33,7 @@
 #define F_ERROR_SOCKET_CREATE_MSG	"[Error] Could not create socket: %s\n"
 #define F_ERROR_SOCKET_LISTEN_MSG	"[Error] Listen to socket failed: %s\n"
 #define F_ERROR_SOCKET_READ_MSG		"[Error] Reading from socket: %s\n"
+#define F_ERROR_SOCKET_SHUTDOWN_MSG	"[Error] Shutdown socket: %s\n"
 #define F_ERROR_SOCKET_WRITE_MSG	"[Error] Writing to socket: %s\n"
 
 #define DEBUG 1 // TODO XXX DEBUG

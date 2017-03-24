@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <errno.h>	// ERANGE, errno
 #include <stdio.h>	// FILE, printf, fprintf, sprintf, stderr, sscanf, fopen, fclose, fwrite
 #include <stdlib.h>	// EXIT_FAILURE, EXIT_SUCCESS, NULL, strtol, malloc, free
@@ -53,19 +54,21 @@ int program_end(int error, int in_fd, int sock_fd) {
 }
 int main (int argc, char *argv[]) {
 	// Function variables
-	int indx = 0;				// TODO XXX
-	int input_port = 0;			// The channel port (type == int)
-	int in_fd = 0;				// The input file 'file descriptor' (FD)
-	int sock_fd = 0;			// The socket file descriptor (FD)
-	int counter_dst = 0;			// The number of bytes we wrote to the channel
-	int counter_src = 0;			// The number of bytes we read from input
-	int padding = 0;			// The amount of padding chars that been have added
-	char read_buf[MAX_BUF+1];		// The string buffer readed from the input
-	char write_buf[MAX_BUF_THEORY+1];	// The string buffer to be sent to the channel
-	char input_port_char[6];		// The channel port (type == string)
-	char* endptr_PORT;			// strtol() for 'input_port'
-	struct sockaddr_in serv_addr;		// The data structure for the channel
-	struct stat in_stat;			// The data structure for the input file
+	int indx = 0;					// TODO XXX
+	int input_port = 0;				// The channel port (type == int)
+	int in_fd = 0;					// The input file 'file descriptor' (FD)
+	int sock_fd = 0;				// The socket file descriptor (FD)
+	int counter_dst = 0;				// The number of bytes we wrote to the channel
+	int counter_src = 0;				// The number of bytes we read from input
+	int padding = 0;				// The amount of padding chars that been have added
+	char read_buf[MAX_BUF+1];			// The string buffer readed from the input
+	char write_buf[MAX_BUF_THEORY+1];		// The string buffer to be sent to the channel
+	char input_port_char[6];			// The channel port (type == string)
+	char* endptr_PORT;				// strtol() for 'input_port'
+	char report[][10] = {"","",""};			// The 3 values for the report
+	char *report_str,*report_token,*report_saveptr;	// Variables to split the string {Ex. report = input.split(':',3)}
+	struct sockaddr_in serv_addr;			// The data structure for the channel
+	struct stat in_stat;				// The data structure for the input file
 	// Init variables
 	memset(read_buf,'0',sizeof(read_buf));
 	memset(write_buf,'0',sizeof(write_buf));
@@ -159,8 +162,25 @@ int main (int argc, char *argv[]) {
 		if (DEBUG) {printf("FLAG 4 - Send %d chars - %.*s\n",counter_dst,counter_dst,write_buf);} // TODO XXX DEBUG
 	}
 	// Close write socket // TODO TODO TODO
-	// Print the response // TODO TODO TODO
-	// Free resources and exit // TODO TODO TODO
+	if (shutdown(sock_fd,SHUT_WR) == -1) { // Upon successful completion, shutdown() shall return 0; otherwise, -1 shall be returned and errno set to indicate the error.
+		fprintf(stderr,F_ERROR_SOCKET_SHUTDOWN_MSG,strerror(errno));
+		return program_end(errno,in_fd,sock_fd);
+	}
+	// Wait and print the response
+	strcpy(read_buf,"-1:-1:-1");
+	if ((counter_dst = read(sock_fd,read_buf,MAX_BUF)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
+		fprintf(stderr,F_ERROR_SOCKET_READ_MSG,strerror(errno));
+		return program_end(errno,in_fd,sock_fd);
+	}
+	for (report_str=read_buf,indx=0;indx<3;report_str=NULL,indx++) {
+		report_token = strtok_r(report_str, ":", &report_saveptr);
+		if (report_token == NULL) {
+			break;
+		}
+		strcpy(report[indx],report_token);
+	}
+	fprintf(stderr,REPORT_SENDER,report[0],report[1],report[2]);
+	// Free resources!!! and exit // TODO TODO TODO
 	// Once all data is sent, and the client finished reading and handling any data received from the channel,
 	// The client closes the connection and finishes.
 	return program_end(EXIT_SUCCESS,in_fd,sock_fd);

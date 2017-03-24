@@ -16,11 +16,11 @@
 // 3) Output file name
 //
 // Flow:
-// 1) Recieve TCP request
+// 1) Receive TCP request
 // 2) Decode hamming code (63,57)
 // 3) Write results to the output file
-// 4) When read socket close, Write the statistics to the channel
-// 5) Print the statistics
+// 4) When read socket close, Write the report to the channel
+// 5) Print the report
 //
 // Examples:
 // > my_receiver 132.66.16.33 6343 rec_file
@@ -57,6 +57,7 @@ int main (int argc, char *argv[]) {
 	int counter_dst = 0;			// The number of bytes we wrote to output
 	int counter_tmp = 0;			// Temporery loop var
 	int padding = 0;			// The amount of padding chars that been have added
+	int report[] = {0,0,0};			// The 3 values for the report
 	char input_port_char[6];		// The channel port (type == string)
 	char read_buf[MAX_BUF_THEORY+1];	// The string buffer got from the channel
 	char write_buf[MAX_BUF+1];		// The string buffer to be writen to the output
@@ -142,6 +143,9 @@ int main (int argc, char *argv[]) {
 			strncpy(write_buf+(padding*HAMMING_FROM),read_buf+(padding*HAMMING_TO),HAMMING_FROM);
 			padding += 1;
 		}
+		report[0] += 7; // received // TODO
+		report[1] += 10; // reconstructed/wrote // TODO
+		report[2] += 13; // corrected // TODO
 		padding *= HAMMING_TO-HAMMING_FROM;
 		// writing the result (the client's data) into the output file OUT.
 		if ((counter_tmp = write(out_fd,write_buf,counter_client-padding)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
@@ -151,10 +155,20 @@ int main (int argc, char *argv[]) {
 		counter_dst += counter_tmp;
 		if (DEBUG) {printf("FLAG 4 - Write total of %d chars\n",counter_dst);} // TODO XXX DEBUG
 	}
-	close(conn_fd); // TODO TODO TODO
-	// When read socket close, Write the statistics to the channel // TODO
-	// Print the statistics // TODO
+	if (DEBUG) {printf("FLAG 5 - Received shutdown()\n");} // TODO XXX DEBUG
+	// When 'read socket' closed, Write the report to the channel
+	if (sprintf(write_buf,"%d:%d:%d",report[0],report[1],report[2]) < 0) { // sprintf(), If an output error is encountered, a negative value is returned.
+		fprintf(stderr,F_ERROR_FUNCTION_SPRINTF_MSG);
+		return program_end(errno,out_fd,channel_fd);
+	}
+	if ((counter_dst = write(conn_fd,write_buf,strlen(write_buf))) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
+		fprintf(stderr,F_ERROR_SOCKET_WRITE_MSG,strerror(errno));
+		return program_end(errno,out_fd,channel_fd);
+	}
+	// Print the report
+	fprintf(stderr,REPORT_RECEIVER,report[0],report[1],report[2]);
 	// Once all data is sent, and the client finished reading and handling any data received from the channel,
 	// The client closes the connection and finishes.
+	close(conn_fd); // TODO TODO TODO
 	return program_end(EXIT_SUCCESS,out_fd,channel_fd);
 }
