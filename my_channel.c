@@ -9,6 +9,9 @@
 // 3) Error probability
 // 4) Random seed
 //
+// yuval: test push simple add.  
+//
+//
 // Flow:
 // 1) Open two TCP sockets
 // 2) When recieving data fron the sender
