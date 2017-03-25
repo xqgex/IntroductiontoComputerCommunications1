@@ -55,15 +55,18 @@ int main (int argc, char *argv[]) {
 	int conn_fd = 0;			// The connection file 'file descriptor' (FD)
 	int counter_client = 0;			// The number of bytes we read from the client
 	int counter_dst = 0;			// The number of bytes we wrote to output
-	int counter_tmp = 0;			// Temporery loop var
 	int padding = 0;			// The amount of padding chars that been have added
 	int report[] = {0,0,0};			// The 3 values for the report
 	char input_port_char[6];		// The channel port (type == string)
 	char read_buf[MAX_BUF_THEORY+1];	// The string buffer got from the channel
+	char bin_from[8*MAX_BUF_THEORY+1];	// The binary representation of 'read_buf'
+	char bin_to[8*MAX_BUF+1];		// The binary representation after hamming calculation
 	char write_buf[MAX_BUF+1];		// The string buffer to be writen to the output
 	char* endptr_PORT;			// strtol() for 'input_port'
 	struct sockaddr_in serv_addr;		// The data structure for the channel
 	// Init variables
+	memset(bin_from,'0',sizeof(bin_from));
+	memset(bin_to,'0',sizeof(bin_to));
 	memset(read_buf,'0',sizeof(read_buf));
 	memset(write_buf,'0',sizeof(write_buf));
 	memset(&serv_addr,'0',sizeof(serv_addr));
@@ -125,7 +128,6 @@ int main (int argc, char *argv[]) {
 		return program_end(errno,out_fd,channel_fd);
 	}
 	write_buf[0] = '\0';
-	counter_dst = 0; // Init to 0 the number of bytes we wrote to output
 	while(1) {
 		if (DEBUG) {printf("FLAG 2\n");} // TODO XXX DEBUG
 		// b. Read data from the client until EOF.
@@ -136,31 +138,37 @@ int main (int argc, char *argv[]) {
 		} else if (counter_client == 0) {
 			break;
 		}
-		if (DEBUG) {printf("FLAG 3 - Receive %d chars - %.*s\n",counter_client,counter_client,read_buf);} // TODO XXX DEBUG
+		if (DEBUG) {printf("FLAG 3 - Receive %d chars\n",counter_client);} // TODO XXX DEBUG
 		// Decode hamming code (63,57) // TODO
+		// len(read_buf)  = counter_client;
+		// len(bin_from)  = counter_client*8;
+		// len(bin_to)    = counter_client*8 - padding;
+		// len(write_buf) = counter_client   - padding/8;
+		str2bin(read_buf,bin_from,counter_client);
 		padding = 0;
-		while ((padding+1)*HAMMING_TO <= counter_client) {
-			strncpy(write_buf+(padding*HAMMING_FROM),read_buf+(padding*HAMMING_TO),HAMMING_FROM);
+		while ((padding+1)*HAMMING_TO <= counter_client*8) {
+			strncpy(bin_to+(padding*HAMMING_FROM),bin_from+(padding*HAMMING_TO),HAMMING_FROM);
 			padding += 1;
 		}
-		report[0] += 7; // received // TODO
-		report[1] += 10; // reconstructed/wrote // TODO
-		report[2] += 13; // corrected // TODO
 		padding *= HAMMING_TO-HAMMING_FROM;
+		bin2str(bin_to,write_buf,counter_client*8-padding);
 		// writing the result (the client's data) into the output file OUT.
-		if ((counter_tmp = write(out_fd,write_buf,counter_client-padding)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
+		if ((counter_dst = write(out_fd,write_buf,counter_client-padding/8)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
 			fprintf(stderr,F_ERROR_OUTPUT_WRITE_MSG,argv[3],strerror(errno));
 			return program_end(errno,out_fd,channel_fd);
 		}
-		counter_dst += counter_tmp;
-		if (DEBUG) {printf("FLAG 4 - Write total of %d chars\n",counter_dst);} // TODO XXX DEBUG
+		report[0] += counter_client; // received
+		report[1] += counter_dst; // reconstructed/wrote
+		report[2] += 1; // corrected // TODO
+		if (DEBUG) {printf("FLAG 4 - Write %d chars - %.*s (%d in total)\n",counter_dst,counter_dst,write_buf,report[1]);} // TODO XXX DEBUG
 	}
 	if (DEBUG) {printf("FLAG 5 - Received shutdown()\n");} // TODO XXX DEBUG
 	// When 'read socket' closed, Write the report to the channel
-	if (sprintf(write_buf,"%d:%d:%d",report[0],report[1],report[2]) < 0) { // sprintf(), If an output error is encountered, a negative value is returned.
+	if (sprintf(write_buf,"%d:%d:%d%c",report[0],report[1],report[2],'\0') < 0) { // sprintf(), If an output error is encountered, a negative value is returned.
 		fprintf(stderr,F_ERROR_FUNCTION_SPRINTF_MSG);
 		return program_end(errno,out_fd,channel_fd);
 	}
+	if (DEBUG) {printf("FLAG 6 - %s ~ %ld\n",write_buf,strlen(write_buf));} // TODO XXX DEBUG
 	if ((counter_dst = write(conn_fd,write_buf,strlen(write_buf))) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
 		fprintf(stderr,F_ERROR_SOCKET_WRITE_MSG,strerror(errno));
 		return program_end(errno,out_fd,channel_fd);

@@ -62,14 +62,18 @@ int main (int argc, char *argv[]) {
 	int counter_src = 0;				// The number of bytes we read from input
 	int padding = 0;				// The amount of padding chars that been have added
 	char read_buf[MAX_BUF+1];			// The string buffer readed from the input
+	char bin_from[8*MAX_BUF+1];			// The binary representation of 'read_buf'
+	char bin_to[8*MAX_BUF_THEORY+1];		// The binary representation after hamming calculation
 	char write_buf[MAX_BUF_THEORY+1];		// The string buffer to be sent to the channel
 	char input_port_char[6];			// The channel port (type == string)
 	char* endptr_PORT;				// strtol() for 'input_port'
-	char report[][10] = {"","",""};			// The 3 values for the report
+	char report[][36] = {"","",""};			// The 3 values for the report // 36 == 3*len("–2147483648")+2*len(":")+1
 	char *report_str,*report_token,*report_saveptr;	// Variables to split the string {Ex. report = input.split(':',3)}
 	struct sockaddr_in serv_addr;			// The data structure for the channel
 	struct stat in_stat;				// The data structure for the input file
 	// Init variables
+	memset(bin_from,'0',sizeof(bin_from));
+	memset(bin_to,'0',sizeof(bin_to));
 	memset(read_buf,'0',sizeof(read_buf));
 	memset(write_buf,'0',sizeof(write_buf));
 	memset(&serv_addr,'0',sizeof(serv_addr));
@@ -142,24 +146,30 @@ int main (int argc, char *argv[]) {
 			break;
 		}
 		// Calc hamming code (63,57) // TODO
+		// len(read_buf)  = counter_src;
+		// len(bin_from)  = counter_src*8;
+		// len(bin_to)    = counter_src*8 + padding;
+		// len(write_buf) = counter_src   + padding/8;
+		str2bin(read_buf,bin_from,counter_src);
 		padding = 0;
-		while ((padding+1)*HAMMING_FROM <= counter_src) {
-			strncpy(write_buf+(padding*HAMMING_TO),read_buf+(padding*HAMMING_FROM),HAMMING_FROM);
+		while ((padding+1)*HAMMING_FROM <= counter_src*8) {
+			strncpy(bin_to+(padding*HAMMING_TO),bin_from+(padding*HAMMING_FROM),HAMMING_FROM);
 			for (indx=HAMMING_FROM;indx<HAMMING_TO;indx++) { // TODO
-				write_buf[(padding*HAMMING_TO)+indx] = '0'; // TODO
+				bin_to[(padding*HAMMING_TO)+indx] = '0'; // TODO
 			} // TODO
 			padding += 1;
 		}
 		padding *= HAMMING_TO-HAMMING_FROM;
+		bin2str(bin_to,write_buf,counter_src*8+padding);
 		if (DEBUG) {printf("FLAG 3 - Read %d chars - %.*s\n",counter_src,counter_src,read_buf);} // TODO XXX DEBUG
 		// Sending data from the input file IN to the server,
-		if ((counter_dst = write(sock_fd,write_buf,counter_src+padding)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
+		if ((counter_dst = write(sock_fd,write_buf,counter_src+padding/8)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
 			fprintf(stderr,F_ERROR_SOCKET_WRITE_MSG,strerror(errno));
 			return program_end(errno,in_fd,sock_fd);
 		} else if (counter_dst == 0) {
 			break;
 		}
-		if (DEBUG) {printf("FLAG 4 - Send %d chars - %.*s\n",counter_dst,counter_dst,write_buf);} // TODO XXX DEBUG
+		if (DEBUG) {printf("FLAG 4 - Send %d chars\n",counter_dst);} // TODO XXX DEBUG
 	}
 	// Close write socket // TODO TODO TODO
 	if (shutdown(sock_fd,SHUT_WR) == -1) { // Upon successful completion, shutdown() shall return 0; otherwise, -1 shall be returned and errno set to indicate the error.
@@ -167,11 +177,13 @@ int main (int argc, char *argv[]) {
 		return program_end(errno,in_fd,sock_fd);
 	}
 	// Wait and print the response
-	strcpy(read_buf,"-1:-1:-1");
+	strcpy(read_buf,"0:0:0");
 	if ((counter_dst = read(sock_fd,read_buf,MAX_BUF)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
 		fprintf(stderr,F_ERROR_SOCKET_READ_MSG,strerror(errno));
 		return program_end(errno,in_fd,sock_fd);
 	}
+	read_buf[counter_dst] = '\0';
+	if (DEBUG) {printf("FLAG 5 - %s ~ %d\n",read_buf,counter_dst);} // TODO XXX DEBUG
 	for (report_str=read_buf,indx=0;indx<3;report_str=NULL,indx++) {
 		report_token = strtok_r(report_str, ":", &report_saveptr);
 		if (report_token == NULL) {

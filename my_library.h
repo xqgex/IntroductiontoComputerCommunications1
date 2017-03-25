@@ -58,3 +58,50 @@ int validateIP4Dotted(const char *s) { // http://stackoverflow.com/questions/791
 	}
 	return 0;
 }
+void printAsBin(char *input,int len, int spaces) {
+	if (input != NULL) {
+		char *ptr = input;
+		int i,j;
+		for (j=0;j<len;j++,++ptr) {
+			if (spaces == 1) {
+				printf(" ");
+			} else {
+				printf("(%c)", *ptr);
+			}
+			for (i = 7;i>=0;--i) {
+				(*ptr & 1 << i) ? putchar('1') : putchar('0');
+			}
+		}
+		putchar('\n');
+	}
+}
+void bin2str(char *input,char *output,int input_len) { // strlen(output) === input_len/8;!!!
+	if ((input == NULL)||(input_len%8 != 0)) {
+		strcpy(output,"\0");
+	}
+	char loop[9];
+	char *ptr;
+	int i,j;
+	for (j=i=0;j<input_len;i++,j+=8) {
+		snprintf(loop,9,"%.*s",8,input+j);
+		output[i] = strtol(loop,&ptr,2);
+	}
+	output[input_len/8] = '\0';
+}
+void str2bin(char *input,char *output,int input_len) { // strlen(output) === 8*input_len;!!!
+	if (input == NULL) {
+		strcpy(output,"00000000");
+	}
+	char *ptr = input;
+	int i,j;
+	for (j=0;j<input_len;j++,++ptr) {
+		for (i=7;i>=0;--i) {
+			if (*ptr & 1 << i) {
+				output[(8*j)+7-i] = '1';
+			} else {
+				output[(8*j)+7-i] = '0';
+			}
+		}
+	}
+	output[8*input_len] = '\0';
+}
