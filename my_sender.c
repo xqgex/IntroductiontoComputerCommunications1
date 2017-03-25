@@ -54,7 +54,7 @@ int program_end(int error, int in_fd, int sock_fd) {
 }
 int main (int argc, char *argv[]) {
 	// Function variables
-	int indx = 0;					// TODO XXX
+	int indx = 0;					// Temporary loop index (traditionally 'i')
 	int input_port = 0;				// The channel port (type == int)
 	int in_fd = 0;					// The input file 'file descriptor' (FD)
 	int sock_fd = 0;				// The socket file descriptor (FD)
@@ -171,7 +171,7 @@ int main (int argc, char *argv[]) {
 		}
 		if (DEBUG) {printf("FLAG 4 - Send %d chars\n",counter_dst);} // TODO XXX DEBUG
 	}
-	// Close write socket // TODO TODO TODO
+	// Close write socket
 	if (shutdown(sock_fd,SHUT_WR) == -1) { // Upon successful completion, shutdown() shall return 0; otherwise, -1 shall be returned and errno set to indicate the error.
 		fprintf(stderr,F_ERROR_SOCKET_SHUTDOWN_MSG,strerror(errno));
 		return program_end(errno,in_fd,sock_fd);
