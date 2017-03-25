@@ -1,10 +1,10 @@
 #include <stdio.h>	// sscanf
 #include <string.h>	// strlen
 
-#define HAMMING_FROM	9 // 57 TODO
-#define HAMMING_TO	10 // 63 TODO
-#define MAX_BUF_THEORY	20 // 4095 TODO
-#define MAX_BUF		(MAX_BUF_THEORY*HAMMING_FROM)/HAMMING_TO	// = 3705
+#define HAMMING_FROM	9 // In bits // 57 TODO
+#define HAMMING_TO	10 // In bits // 63 TODO
+#define MAX_BUF_THEORY	20 // In bytes // 4095 TODO
+#define MAX_BUF		(MAX_BUF_THEORY*HAMMING_FROM)/HAMMING_TO	// In bytes, =3705
 
 // Define printing strings
 #define IP_INVALID_MSG			"%s is not a valid IPv4 address\n"
