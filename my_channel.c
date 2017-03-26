@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 	int num_bits_fliped = 0;					// count the number of flipped bits. 
 	float error_p = 0.0;						// The given error probabilty (type == float)
 	struct sockaddr_in serv_addr;				// The data structure for the sender // TODO set back to sender servadd
-	struct sockaddr_out serv_addr_reciver;		// The data structure for the reciver
+	struct sockaddr_out serv_addr_reciver; // TODO COMPILATION ERROR - storage size of ‘serv_addr_reciver’ isn’t known		// The data structure for the reciver
 
 	// input variables (sender and reciver)
 	int sender_conn_fd = 0;						// The sender connection file 'file descriptor' (FD)
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	error_p = strtof(argv[3], NULL, 10);
+	error_p = strtof(argv[3], NULL, 10); // TODO COMPILATION ERROR - too many arguments to function ‘strtof’
 	if (error_p < 1) { // random seed value parsing fail
 		printf(ERRPR_P_MSG);
 		return EXIT_FAILURE;
@@ -258,8 +258,8 @@ int main(int argc, char *argv[]) {
 		if (send_to_recv) {
 
 			if (DEBUG) { printf(">My_channel %s %s %s %s %s\n", argv[0], argv[1], argv[2], argv[3], argv[4]); } // TODO XXX DEBUG
-			if (DEBUG) { printf("sender: %s ", sender_ip ); } // TODO XXX DEBUG
-			if (DEBUG) { printf("reciver: %s ", reciver_ip); } // TODO XXX DEBUG
+			if (DEBUG) { printf("sender: %s ", sender_ip ); } // TODO COMPILATION ERROR - ‘sender_ip’ undeclared (first use in this function) // TODO XXX DEBUG
+			if (DEBUG) { printf("reciver: %s ", reciver_ip); } // TODO COMPILATION ERROR - ‘reciver_ip’ undeclared (first use in this function) // TODO XXX DEBUG
 
 											   // b. Read data from the client until EOF.
 											   // You cannot assume anything regarding the overall size of the input.
@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
 				return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 			}
 			else if (counter_input_sender == 0) {			// recived EOF. preper to land.
-				close_one_way; // TODO XXX 
+				close_one_way; // TODO COMPILATION ERROR - ‘close_one_way’ undeclared (first use in this function) // TODO XXX 
 				send_to_recv = 0; // close read loop.
 				continue;
 			}
@@ -321,7 +321,7 @@ int main(int argc, char *argv[]) {
 				return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 			}
 			else if (counter_input_reciver == 0) {			// recived EOF. preper to land.
-				close_second_way; // TODO XXX
+				close_second_way; // TODO COMPILATION ERROR - ‘close_second_way’ undeclared (first use in this function) // TODO XXX
 				recv_to_send = 0; // close read loop.
 				continue;
 			}
