@@ -157,7 +157,7 @@ int main (int argc, char *argv[]) {
 		// len(write_buf) = counter_src   + padding/8;
 		str2bin(read_buf,bin_from,counter_src);
 		padding = 0;
-		while ((padding+1)*HAMMING_FROM <= counter_src*8) { // We read up to MAX_BUF chars, and process HAMMING_FROM bits at a tine.
+		while ((padding+1)*HAMMING_FROM <= counter_src*8) { // We read up-to MAX_BUF chars, and process HAMMING_FROM bits at a time.
 			bin_from_count = 0;
 			for (indx=0;indx<HAMMING_TO;indx++) {
 				if (decimalToBinary(indx+1,indxBinary) != 1) { // Data bit - calculate XOR for relevants parity bits
