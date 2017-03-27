@@ -1,14 +1,12 @@
-#include <stdio.h>	// FILE, fopen, fclose, sprintf, printf, fwrite
-#include <stdlib.h>	// malloc, free, NULL
-#include <string.h>	// strcmp, strcpy
-#include <unistd.h>	// F_OK, R_OK
-#include <errno.h>	// ERANGE, errno
-#include <limits.h>	// LONG_MAX, LONG_MIN
+#include <stdio.h>		// FILE, fopen, fclose, sprintf, printf, fwrite
+#include <stdlib.h>		// malloc, free, NULL
+#include <string.h>		// strcmp, strcpy
+#include <errno.h>		// ERANGE, errno
+#include <limits.h>		// LONG_MAX, LONG_MIN
 #include <sys/stat.h>	// S_ISDIR, stat
-#include <fcntl.h>	// O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, open
-#include <arpa/inet.h> 	// AF_INET, SOCK_STREAM, socket, htons, inet_addr, connect, sockaddr_in
+#include <fcntl.h>		// O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, open
 #include "my_library.h"	// validateIP4Dotted
-
+#include "winsock2.h"	// windows sockets include  
 
 //MSG def // TODO move to headr in time
 #define SEED_INV "seed parsing faild due to bad input or diffrent error"
@@ -69,39 +67,39 @@ int program_end(int error, int sender_fd, int reciver_fd, int sender_conn_fd, in
 }
 int main(int argc, char *argv[]) {
 	/// Function variables///
-	int i;
+	int i, check = 0;				// loop var, and errno check;					
 	int send_to_recv = 1;			// sender to recver falg (type == int)
 	int recv_to_send = 1;			// recver to sender falg (type == int)
 	int sender_port = 0;			// The channels sender port (type == int)
 	int reciver_port = 0;			// The channels reciver port (type == int)
-	int sender_fd = 0;			// The sender file descriptor (FD)
-	int reciver_fd = 0;			// The reciver file descriptor (FD)
-	int Rand_seed = 0;			// The input randon seed (type == int)
-	int random_var = 0;			// The random variable created by srand fuction (type == int)
+	int sender_fd = 0;				// The sender file descriptor (FD)
+	int reciver_fd = 0;				// The reciver file descriptor (FD)
+	int Rand_seed = 0;				// The input randon seed (type == int)
+	int random_var = 0;				// The random variable created by srand fuction (type == int)
 	int num_bits_fliped = 0;		// count the number of flipped bits.
 	float error_p = 0.0;			// The given error probabilty (type == float)
-	struct sockaddr_in serv_addr;		// The data structure for the sender // TODO set back to sender servadd
-	struct sockaddr_out serv_addr_reciver;	// TODO COMPILATION ERROR - storage size of ‘serv_addr_reciver’ isn’t known	// The data structure for the reciver
+	struct sockaddr_in serv_addr_sender;	// The data structure for the sender // TODO set back to sender servadd
+	struct sockaddr_in serv_addr_reciver;	// TODO COMPILATION ERROR - storage size of ‘serv_addr_reciver’ isn’t known	// The data structure for the reciver
 	// input variables (sender and reciver)
-	int sender_conn_fd = 0;				// The sender connection file 'file descriptor' (FD)
+	int sender_conn_fd = 0;					// The sender connection file 'file descriptor' (FD)
 	int counter_input_sender = 0;			// The number of bytes we read from the sender
 	int counter_input_reciver = 0;			// The number of bytes we read from the reciver
-	char sender_port_char[6];			// The input port (type == string)
-	char sender_read_buf[MAX_BUF_THEORY + 1];	// The string buffer got from the sender
-	char reciver_read_buf[MAX_BUF_THEORY + 1];	// The string buffer got from the reciver
+	char sender_port_char[6];				// The input port (type == string)
+	char sender_read_buf[MAX_BUF_THEORY + 1];		// The string buffer got from the sender
+	char reciver_read_buf[MAX_BUF_THEORY + 1];		// The string buffer got from the reciver
 	char sender_bin_from[8 * MAX_BUF_THEORY + 1];	// The binary representation of 'sender_read_buf'
 	char reciver_bin_from[8 * MAX_BUF_THEORY + 1];	// The binary representation of 'reciver_read_buf'
-	char* sender_endptr_PORT;			// strtol() for 'sender_port'
+	char* sender_endptr_PORT;						// strtol() for 'sender_port'
 	// output variables (sender and reciver)
-	int reciver_conn_fd = 0;			// The output connection file 'file descriptor' (FD)
-	int counter_output_sender = 0;			// The number of bytes we send to the sender
-	int counter_output_reciver = 0;			// The number of bytes we send to the reciver
-	char reciver_port_char[6];			// The output port (type == string)
-	char sender_write_buf[MAX_BUF_THEORY + 1];	// The string buffer send to the sender
-	char reciver_write_buf[MAX_BUF_THEORY + 1];	// The string buffer send to the reciver
-	char sender_bin_to[8 * MAX_BUF_THEORY + 1];	// The binary representation of 'sender_write_buf'
+	int reciver_conn_fd = 0;						// The output connection file 'file descriptor' (FD)
+	int counter_output_sender = 0;					// The number of bytes we send to the sender
+	int counter_output_reciver = 0;					// The number of bytes we send to the reciver
+	char reciver_port_char[6];						// The output port (type == string)
+	char sender_write_buf[MAX_BUF_THEORY + 1];		// The string buffer send to the sender
+	char reciver_write_buf[MAX_BUF_THEORY + 1];		// The string buffer send to the reciver
+	char sender_bin_to[8 * MAX_BUF_THEORY + 1];		// The binary representation of 'sender_write_buf'
 	char reciver_bin_to[8 * MAX_BUF_THEORY + 1];	// The binary representation of 'reciver_write_buf'
-	char* reciver_endptr_PORT;			// strtol() for 'sender_input_port'
+	char* reciver_endptr_PORT;						// strtol() for 'sender_input_port'
 	// Init variables
 	memset(sender_bin_from, '0', sizeof(sender_bin_from));
 	memset(reciver_bin_from, '0', sizeof(reciver_bin_from));
@@ -175,13 +173,13 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, F_ERROR_SOCKET_CREATE_MSG, strerror(errno));
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(sender_port);
+	serv_addr_sender.sin_family = AF_INET;
+	serv_addr_sender.sin_port = htons(sender_port);
 	serv_addr_reciver.sin_family = AF_INET;
 	serv_addr_reciver.sin_port = htons(reciver_port);
 	//serv_addr.sin_addr.s_addr = inet_addr(argv[1]);//htonl(INADDR_ANY); // INADDR_ANY = any local machine address
 	//sender bind
-	if (bind(sender_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
+	if (bind(sender_fd, (struct sockaddr*)&serv_addr_sender, sizeof(serv_addr_sender)) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
 		fprintf(stderr, F_ERROR_SOCKET_BIND_MSG, strerror(errno));
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
@@ -221,6 +219,7 @@ int main(int argc, char *argv[]) {
 	///////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////
 	while (recv_to_send || send_to_recv) { // while at list one of the flags is up
+
 		////////////////////////////////////////////
 		//////////                        //////////
 		//////////   sender ---> reciver  //////////
@@ -228,16 +227,23 @@ int main(int argc, char *argv[]) {
 		////////////////////////////////////////////
 		if (send_to_recv) {
 			if (DEBUG) { printf(">My_channel %s %s %s %s %s\n", argv[0], argv[1], argv[2], argv[3], argv[4]); } // TODO XXX DEBUG
-			if (DEBUG) { printf("sender: %s ", sender_ip ); } // TODO COMPILATION ERROR - ‘sender_ip’ undeclared (first use in this function) // TODO XXX DEBUG
-			if (DEBUG) { printf("reciver: %s ", reciver_ip); } // TODO COMPILATION ERROR - ‘reciver_ip’ undeclared (first use in this function) // TODO XXX DEBUG
+			if (DEBUG) { printf("sender: %s ", serv_addr_sender); } // print sender IP adress // TODO DEBUG
+			if (DEBUG) { printf("reciver: %s ", serv_addr_reciver); } //print reciver IP adress // TODO DEBUG
 			// b. Read data from the client until EOF.
 			// You cannot assume anything regarding the overall size of the input.
 			if ((counter_input_sender = read(sender_conn_fd, sender_read_buf, MAX_BUF_THEORY)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
 				fprintf(stderr, F_ERROR_SOCKET_READ_MSG, strerror(errno));
 				return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
-			} else if (counter_input_sender == 0) { // recived EOF. preper to land.
-				close_one_way; // TODO COMPILATION ERROR - ‘close_one_way’ undeclared (first use in this function) // TODO XXX
-				send_to_recv = 0; // close read loop.
+			} else if (counter_input_sender == 0) {									// recived EOF. preper to land.
+				if ((check = shutdown(reciver_conn_fd, SD_SEND)) == -1) {			// close the connection with reciver to send direction only.  
+					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, strerror(errno));
+					return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
+				}
+				if ((check = shutdown(sender_conn_fd, SD_RECEIVE)) == -1) {			// close the connection with sender to recive direction only.  
+					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, strerror(errno));
+					return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
+				}
+				send_to_recv = 0; // close read loop, stop trying to read from the sender. 
 				continue;
 			}
 			// to bin
@@ -247,7 +253,7 @@ int main(int argc, char *argv[]) {
 			srand(Rand_seed);
 			// turn
 			num_bits_fliped = 0;
-			for (i = 0; i < counter_input_sender; i++) {
+			for (i = 0 ; i < counter_input_sender*8 ; i++) {
 				random_var = (rand() % 1000);
 				if (random_var <= (int)(error_p * 1000)) {
 					reciver_bin_to[i] = !sender_bin_from[i];
@@ -257,7 +263,7 @@ int main(int argc, char *argv[]) {
 				}
 			}
 			// back from bin
-			bin2str(reciver_bin_to, reciver_write_buf, counter_input_sender);
+			bin2str(reciver_bin_to, reciver_write_buf, counter_input_sender*8);
 			// writing the result to reciver.
 			if ((counter_output_reciver = write(reciver_conn_fd, reciver_write_buf, counter_input_sender)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
 				fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, strerror(errno));
@@ -271,17 +277,26 @@ int main(int argc, char *argv[]) {
 		//////////   sender <--- reciver  //////////
 		//////////                        //////////
 		////////////////////////////////////////////
+
 		if (recv_to_send) {
 			if (DEBUG) { printf(">My_channel %s %s %s %s %s\n", argv[0], argv[1], argv[2], argv[3], argv[4]); } // TODO XXX DEBUG
-			if (DEBUG) { printf("sender: %s ", reciver_ip); } // TODO XXX DEBUG
-			if (DEBUG) { printf("reciver: %s ", sender_ip); } // TODO XXX DEBUG
+			if (DEBUG) { printf("sender: %s ", serv_addr_reciver); } //print sender(this time the reciver) IP adress // TODO DEBUG
+			if (DEBUG) { printf("reciver: %s ", serv_addr_sender); } //print reciver (this time the sender) IP adress // TODO DEBUG
 			// b. Read data from the client until EOF.
 			// You cannot assume anything regarding the overall size of the input.
 			if ((counter_input_reciver = read(reciver_conn_fd, reciver_read_buf, MAX_BUF_THEORY)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
 				fprintf(stderr, F_ERROR_SOCKET_READ_MSG, strerror(errno));
 				return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
-			} else if (counter_input_reciver == 0) { // recived EOF. preper to land.
-				close_second_way; // TODO COMPILATION ERROR - ‘close_second_way’ undeclared (first use in this function) // TODO XXX
+			} else if (counter_input_reciver == 0) {								// recived EOF. preper to land.
+				if ((check = shutdown(sender_conn_fd, SD_SEND)) == -1) {			// close the connection with sender to send direction only.  
+					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, strerror(errno));
+					return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
+				}
+				if ((check = shutdown(reciver_conn_fd, SD_RECEIVE)) == -1) {		// close the connection with reciver to recive direction only.  
+					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, strerror(errno));
+					return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
+				}
+
 				recv_to_send = 0; // close read loop.
 				continue;
 			}
@@ -290,11 +305,11 @@ int main(int argc, char *argv[]) {
 			// turn over bytes in given ratio.
 			// turn
 			num_bits_fliped = 0;
-			for (i = 0; i < counter_input_reciver; i++) {
+			for (i = 0 ; i < counter_input_reciver*8 ; i++) {
 				sender_bin_to[i] = reciver_bin_from[i]; // in this diraction, no filiping gets done.
 			}
 			// back from bin
-			bin2str(sender_bin_to, sender_write_buf, counter_input_reciver);
+			bin2str(sender_bin_to, sender_write_buf, counter_input_reciver*8);
 			// writing the result to reciver.
 			if ((counter_output_sender = write(sender_conn_fd, sender_write_buf, counter_input_reciver)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
 				fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, strerror(errno));
@@ -303,7 +318,7 @@ int main(int argc, char *argv[]) {
 			if (DEBUG) { printf("FLAG 6 - messege length %d bytes\n", counter_output_sender); } // TODO XXX DEBUG
 			if (DEBUG) { printf("FLAG 7 - fliped %d bits\n", num_bits_fliped); } // TODO XXX DEBUG
 		}
-	} // end of while 1
+	} // end of while loop
 	//TODO - close ramming fd and so on.
 	return 0;
 }
