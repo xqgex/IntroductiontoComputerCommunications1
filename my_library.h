@@ -1,10 +1,11 @@
 #include <stdio.h>	// sscanf
 #include <string.h>	// strlen
 
-#define HAMMING_FROM	9 // In bits // 57 TODO
-#define HAMMING_TO	10 // In bits // 63 TODO
-#define MAX_BUF_THEORY	20 // In bytes // 4095 TODO
-#define MAX_BUF		(MAX_BUF_THEORY*HAMMING_FROM)/HAMMING_TO	// In bytes, =3705
+#define HAMMING_FROM		11 // In bits // 57 TODO
+#define HAMMING_TO		15 // In bits // 63 TODO
+#define HAMMING_BINARY_LEN	6 // len(base(63,2))==6;
+#define MAX_BUF_THEORY		30 // In bytes // 4095 TODO
+#define MAX_BUF			(MAX_BUF_THEORY*HAMMING_FROM)/HAMMING_TO	// In bytes, =3705
 
 // Define printing strings
 #define IP_INVALID_MSG			"%s is not a valid IPv4 address\n"
@@ -58,7 +59,7 @@ int validateIP4Dotted(const char *s) { // http://stackoverflow.com/questions/791
 	}
 	return 0;
 }
-void printAsBin(char *input,int len, int spaces) {
+void printAsBin(char *input,int len,int spaces) {
 	if (input != NULL) {
 		char *ptr = input;
 		int i,j;
@@ -104,4 +105,22 @@ void str2bin(char *input,char *output,int input_len) { // strlen(output) === 8*i
 		}
 	}
 	output[8*input_len] = '\0';
+}
+int decimalToBinary(int num, int* binary) {
+	int count = 0;
+	int i = 1;
+	int remainder;
+	for (i=0;i<HAMMING_BINARY_LEN;i++) {
+		if (num != 0) {
+			remainder = num%2;
+			num = num/2;
+			binary[i] = remainder;
+			if (remainder == 1) {
+				count++;
+			}
+		} else {
+			binary[i] = 0;
+		}
+	}
+	return count;
 }

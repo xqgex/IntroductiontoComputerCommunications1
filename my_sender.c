@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <errno.h>	// ERANGE, errno
+#include <math.h>	// log
 #include <stdio.h>	// FILE, printf, fprintf, sprintf, stderr, sscanf, fopen, fclose, fwrite
 #include <stdlib.h>	// EXIT_FAILURE, EXIT_SUCCESS, NULL, strtol, malloc, free
 #include <string.h>	// strlen, strcmp, strcpy, strerror, memset
@@ -54,7 +55,11 @@ int program_end(int error, int in_fd, int sock_fd) {
 }
 int main (int argc, char *argv[]) {
 	// Function variables
+	int bin_from_count = 0;				// Point to the current cell at 'bin_from' (range from 0 to HAMMING_FROM)
 	int indx = 0;					// Temporary loop index (traditionally 'i')
+	int indxBinary[HAMMING_BINARY_LEN];		// The binary representation of 'indx' as array of ints
+	int jndx = 0;					// Temporary loop index (traditionally 'j')
+	//int indxOnes = 0;				// Number of '1' in index binary representation // TODO XXX
 	int input_port = 0;				// The channel port (type == int)
 	int in_fd = 0;					// The input file 'file descriptor' (FD)
 	int sock_fd = 0;				// The socket file descriptor (FD)
@@ -73,7 +78,6 @@ int main (int argc, char *argv[]) {
 	struct stat in_stat;				// The data structure for the input file
 	// Init variables
 	memset(bin_from,'0',sizeof(bin_from));
-	memset(bin_to,'0',sizeof(bin_to));
 	memset(read_buf,'0',sizeof(read_buf));
 	memset(write_buf,'0',sizeof(write_buf));
 	memset(&serv_addr,'0',sizeof(serv_addr));
@@ -137,6 +141,7 @@ int main (int argc, char *argv[]) {
 	write_buf[0] = '\0';
 	// All inputs variables are valid, Stsrt working
 	while (1) {
+		memset(bin_to,'0',sizeof(bin_to));
 		if (DEBUG) {printf("FLAG 2\n");} // TODO XXX DEBUG
 		// Read input file IN
 		if ((counter_src = read(in_fd,read_buf,MAX_BUF)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
@@ -152,16 +157,32 @@ int main (int argc, char *argv[]) {
 		// len(write_buf) = counter_src   + padding/8;
 		str2bin(read_buf,bin_from,counter_src);
 		padding = 0;
-		while ((padding+1)*HAMMING_FROM <= counter_src*8) {
-			strncpy(bin_to+(padding*HAMMING_TO),bin_from+(padding*HAMMING_FROM),HAMMING_FROM);
-			for (indx=HAMMING_FROM;indx<HAMMING_TO;indx++) { // TODO
-				bin_to[(padding*HAMMING_TO)+indx] = '0'; // TODO
-			} // TODO
+		while ((padding+1)*HAMMING_FROM <= counter_src*8) { // We read up to MAX_BUF chars, and process HAMMING_FROM bits at a tine.
+			bin_from_count = 0;
+			for (indx=0;indx<HAMMING_TO;indx++) {
+				if (decimalToBinary(indx+1,indxBinary) != 1) { // Data bit - calculate XOR for relevants parity bits
+					if (bin_from[(padding*HAMMING_FROM)+bin_from_count] == '1') { // If value is one
+						for (jndx=0;jndx<HAMMING_BINARY_LEN;jndx++) { // Foreach bit
+							if (indxBinary[jndx] == 1) { // If it's one
+								bin_to[(padding*HAMMING_TO)+(int)pow(2,jndx)-1] ^= 1; // XOR
+								//if (DEBUG) {printf("b[%d]^=1;\n",padding*HAMMING_TO+(int)pow(2,jndx)-1);} // TODO XXX DEBUG
+							}
+						}
+					}
+					bin_to[(padding*HAMMING_TO)+indx] = bin_from[(padding*HAMMING_FROM)+bin_from_count];
+					//if (DEBUG) {printf("b[%d]=b[%d];\n",(padding*HAMMING_TO)+indx,(padding*HAMMING_FROM)+bin_from_count);} // TODO XXX DEBUG
+					bin_from_count++;
+				}
+			}
 			padding += 1;
 		}
 		padding *= HAMMING_TO-HAMMING_FROM;
 		bin2str(bin_to,write_buf,counter_src*8+padding);
 		if (DEBUG) {printf("FLAG 3 - Read %d chars - %.*s\n",counter_src,counter_src,read_buf);} // TODO XXX DEBUG
+		if (DEBUG) {printAsBin(read_buf,counter_src,1);} // TODO XXX DEBUG
+		if (DEBUG) {printf("%.*s\n",counter_src*8,bin_from);} // TODO XXX DEBUG
+		if (DEBUG) {printf("%.*s\n",counter_src*8+padding,bin_to);} // TODO XXX DEBUG
+		if (DEBUG) {printAsBin(write_buf,counter_src+padding/8,1);} // TODO XXX DEBUG
 		// Sending data from the input file IN to the server,
 		if ((counter_dst = write(sock_fd,write_buf,counter_src+padding/8)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
 			fprintf(stderr,F_ERROR_SOCKET_WRITE_MSG,strerror(errno));
