@@ -9,9 +9,9 @@
 #include "winsock2.h"	// windows sockets include  
 
 //MSG def // TODO move to headr in time
-#define SEED_INV "seed parsing faild due to bad input or diffrent error"
-#define ERRPR_P_MSG "error probebility parsing faild due to bad input or diffrent error"
-
+#define SEED_INV "seed parsing faild due to bad input or diffrent error \n"
+#define ERRPR_P_MSG "error probebility parsing faild due to bad input or diffrent error \n"
+#pragma comment(lib, "Ws2_32.lib") // some kind of an include in order to compile and link REFERANCE: http://stackoverflow.com/questions/16948064/unresolved-external-symbol-lnk2019
 //
 // Input (arguments):
 // 1) The sender port
@@ -112,11 +112,11 @@ int main(int argc, char *argv[]) {
 	memset(sender_port_char, '0', sizeof(sender_port_char));
 	memset(reciver_port_char, '0', sizeof(reciver_port_char));
 	// Check correct call structure
-	if (argc != 4) {
-		if (argc < 4) {
-			printf(USAGE_OPERANDS_MISSING_MSG, argv[0], "OUT");
+	if (argc != 5) {
+		if (argc < 5) {
+			printf(USAGE_OPERANDS_MISSING_MSG, argv[0], "SEED");
 		} else {
-			printf(USAGE_OPERANDS_SURPLUS_MSG, argv[0], "OUT");
+			printf(USAGE_OPERANDS_SURPLUS_MSG, argv[0], "SEED");
 		}
 		return EXIT_FAILURE;
 	}
