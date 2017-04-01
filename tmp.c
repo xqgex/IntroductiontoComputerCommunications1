@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <arpa/inet.h>
-
+//#include <arpa/inet.h>
+/*
 void printAsBin(char *input,int len) {
 	if (input != NULL) {
 		char *ptr = input;
@@ -53,7 +53,7 @@ void str2bin(char *input,char *output,int input_len) { // strlen(output) === 8*i
 }
 int main () {
 	char str_ascii[] = "abcdefghi"; // Start len()=9 bytes=72 bits
-	char str_bin[8*strlen(str_ascii)+1]; // Finish len()=10 bytes=80 bits // (padded with 8 additional bits)
+	char str_bin[8 * strlen(str_ascii) + 1]; // Finish len()=10 bytes=80 bits // (padded with 8 additional bits)
 	int hamming_from = 9; // In bits
 	int hamming_to = 10; // In bits
 	//
@@ -107,3 +107,4 @@ int main1 () {
 		if (t > 1) {return 0;} // TODO XXX
 	}
 }
+*/

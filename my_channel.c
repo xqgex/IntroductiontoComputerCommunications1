@@ -1,12 +1,14 @@
-#include <stdio.h>		// FILE, fopen, fclose, sprintf, printf, fwrite
+#include <stdio.h>		// FILE, fopen, fclose, sprintf, printf, fwrite, snprintf
 #include <stdlib.h>		// malloc, free, NULL
 #include <string.h>		// strcmp, strcpy
 #include <errno.h>		// ERANGE, errno
+#include <io.h>
 #include <limits.h>		// LONG_MAX, LONG_MIN
 #include <sys/stat.h>	// S_ISDIR, stat
 #include <fcntl.h>		// O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, open
 #include "my_library.h"	// validateIP4Dotted
 #include "winsock2.h"	// windows sockets include  
+#include <stdint.h>
 
 //MSG def // TODO move to headr in time
 #define SEED_INV "seed parsing faild due to bad input or diffrent error \n"

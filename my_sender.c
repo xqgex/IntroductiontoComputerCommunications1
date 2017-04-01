@@ -1,15 +1,18 @@
 #define _GNU_SOURCE
 #include <errno.h>	// ERANGE, errno
+#include <io.h>
 #include <math.h>	// log
 #include <stdio.h>	// FILE, printf, fprintf, sprintf, stderr, sscanf, fopen, fclose, fwrite
 #include <stdlib.h>	// EXIT_FAILURE, EXIT_SUCCESS, NULL, strtol, malloc, free
 #include <string.h>	// strlen, strcmp, strcpy, strerror, memset
-#include <unistd.h>	// F_OK, R_OK, lseek, close, read, write
+//#include <unistd.h>	// F_OK, R_OK, lseek, close, read, write
 #include <limits.h>	// LONG_MAX, LONG_MIN
 #include <sys/stat.h>	// S_ISDIR, stat
 #include <fcntl.h>	// O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, open
-#include <arpa/inet.h> 	// AF_INET, SOCK_STREAM, socket, htons, inet_addr, connect, sockaddr_in
+//#include <arpa/inet.h> 	// AF_INET, SOCK_STREAM, socket, htons, inet_addr, connect, sockaddr_in
 #include "my_library.h"	// validateIP4Dotted
+#include "winsock2.h"	// windows sockets include  
+#include <stdint.h>
 
 //
 // Input (arguments):

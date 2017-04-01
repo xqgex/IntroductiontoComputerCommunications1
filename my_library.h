@@ -1,5 +1,6 @@
 #include <stdio.h>	// sscanf
 #include <string.h>	// strlen
+#include <stdio.h>	// snprintf
 
 #define HAMMING_FROM		11 // In bits // 57 TODO
 #define HAMMING_TO		15 // In bits // 63 TODO
@@ -38,6 +39,12 @@
 #define F_ERROR_SOCKET_WRITE_MSG	"[Error] Writing to socket: %s\n"
 
 #define DEBUG 1 // TODO XXX DEBUG
+
+#ifndef SHUT_RDWR
+	#define SHUT_RD   0x00
+	#define SHUT_WR   0x01
+	#define SHUT_RDWR 0x02
+#endif
 
 int validateIP4Dotted(const char *s) { // http://stackoverflow.com/questions/791982/determine-if-a-string-is-a-valid-ip-address-in-c#answer-14181669
 	char tail[16];
