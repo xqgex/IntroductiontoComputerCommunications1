@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <errno.h>	// ERANGE, errno
 #include <io.h>
 #include <math.h>	// log
@@ -39,13 +38,16 @@
 //
 
 int program_end(int error, int in_fd, int sock_fd) {
+	char errmsg[256];
 	int res = 0;
-	if ((0 < in_fd)&(close(in_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_INPUT_CLOSE_MSG,strerror(errno));
+	if ((0 < in_fd)&(_close(in_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_INPUT_CLOSE_MSG, errmsg);
 		res = errno;
 	}
-	if ((0 < sock_fd)&&(close(sock_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_SOCKET_CLOSE_MSG,strerror(errno));
+	if ((0 < sock_fd)&&(_close(sock_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 		res = errno;
 	}
 	if ((error != 0)||(res != 0)) {
@@ -69,6 +71,7 @@ int main (int argc, char *argv[]) {
 	int counter_dst = 0;				// The number of bytes we wrote to the channel
 	int counter_src = 0;				// The number of bytes we read from input
 	int padding = 0;				// The amount of padding chars that been have added
+	char errmsg[256];
 	char read_buf[MAX_BUF+1];			// The string buffer readed from the input
 	char bin_from[8*MAX_BUF+1];			// The binary representation of 'read_buf'
 	char bin_to[8*MAX_BUF_THEORY+1];		// The binary representation after hamming calculation
@@ -101,7 +104,8 @@ int main (int argc, char *argv[]) {
 	// Check input port
 	input_port = strtol(argv[2],&endptr_PORT,10); // If an underflow occurs. strtol() returns LONG_MIN. If an overflow occurs, strtol() returns LONG_MAX. In both cases, errno is set to ERANGE.
 	if ((errno == ERANGE && (input_port == (int)LONG_MAX || input_port == (int)LONG_MIN)) || (errno != 0 && input_port == 0)) {
-		fprintf(stderr,F_ERROR_FUNCTION_STRTOL_MSG,strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_FUNCTION_STRTOL_MSG, errmsg);
 		return errno;
 	} else if ( (endptr_PORT == argv[2])||(input_port < 1)||(input_port > 65535) ) { // (Empty string) or (not in range [1,65535])
 		printf(PORT_INVALID_MSG);
@@ -114,22 +118,26 @@ int main (int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 	// Check input file - ||We can not assume anything regarding the size of IN.||
-	if ((in_fd = open(argv[3],O_RDONLY)) == -1) { // Upon successful completion, ... return a non-negative integer .... Otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_INPUT_FILE_MSG,argv[3],strerror(errno)); // IN must exist, otherwise output an error and exit.
+	if ((in_fd = _open(argv[3],O_RDONLY)) == -1) { // Upon successful completion, ... return a non-negative integer .... Otherwise, -1 shall be returned and errno set to indicate the error.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_INPUT_FILE_MSG, argv[3], errmsg); // IN must exist, otherwise output an error and exit.
 		return program_end(errno,in_fd,sock_fd);
 	} else if (stat(argv[3],&in_stat) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr,F_ERROR_INPUT_OPEN_MSG,argv[3],strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_INPUT_OPEN_MSG, argv[3], errmsg);
 		return program_end(errno,in_fd,sock_fd);
 	} else if (S_ISDIR(in_stat.st_mode)) {
 		fprintf(stderr,F_ERROR_INPUT_IS_FOLDER_MSG,argv[3]);
 		return program_end(-1,in_fd,sock_fd);
-	} else if (lseek(in_fd,SEEK_SET,0) == -1) { // Upon successful completion, lseek() returns the resulting offset ... from the beginning of the file. On error, the value (off_t) -1 is returned and errno is set to indicate the error.
-		fprintf(stderr,F_ERROR_FUNCTION_LSEEK_MSG,strerror(errno));
+	} else if (_lseek(in_fd,SEEK_SET,0) == -1) { // Upon successful completion, lseek() returns the resulting offset ... from the beginning of the file. On error, the value (off_t) -1 is returned and errno is set to indicate the error.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_FUNCTION_LSEEK_MSG, errmsg);
 		return program_end(errno,in_fd,sock_fd);
 	}
 	// Open connection to the channel // Data should be sent via a TCP socket, to the channel specified by IP:PORT.
 	if((sock_fd = socket(AF_INET,SOCK_STREAM,0)) == -1) { // On success, a file descriptor for the new socket is returned. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr,F_ERROR_SOCKET_CREATE_MSG,strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CREATE_MSG, errmsg);
 		return program_end(errno,in_fd,sock_fd);
 	}
 	if (DEBUG) {printf("FLAG 0\n");} // TODO XXX DEBUG
@@ -137,7 +145,8 @@ int main (int argc, char *argv[]) {
 	serv_addr.sin_port = htons(input_port);
 	serv_addr.sin_addr.s_addr = inet_addr(argv[1]);
 	if (connect(sock_fd,(struct sockaddr*)&serv_addr,sizeof(serv_addr)) == -1) { // Upon successful completion, connect() shall return 0; otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_SOCKET_CONNECT_MSG,strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CONNECT_MSG, errmsg);
 		return program_end(errno,in_fd,sock_fd);
 	}
 	if (DEBUG) {printf("FLAG 1\n");} // TODO XXX DEBUG
@@ -147,8 +156,9 @@ int main (int argc, char *argv[]) {
 		memset(bin_to,'0',sizeof(bin_to));
 		if (DEBUG) {printf("FLAG 2\n");} // TODO XXX DEBUG
 		// Read input file IN
-		if ((counter_src = read(in_fd,read_buf,MAX_BUF)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
-			fprintf(stderr,F_ERROR_INPUT_READ_MSG,argv[3],strerror(errno));
+		if ((counter_src = _read(in_fd,read_buf,MAX_BUF)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
+			strerror_s(errmsg, 255, errno);
+			fprintf(stderr, F_ERROR_INPUT_READ_MSG, argv[3], errmsg);
 			return program_end(errno,in_fd,sock_fd);
 		} else if (counter_src == 0) { // Received EOF, Exit the infinity loop
 			break;
@@ -187,8 +197,9 @@ int main (int argc, char *argv[]) {
 		if (DEBUG) {printf("%.*s\n",counter_src*8+padding,bin_to);} // TODO XXX DEBUG
 		if (DEBUG) {printAsBin(write_buf,counter_src+padding/8,1);} // TODO XXX DEBUG
 		// Sending data from the input file IN to the server,
-		if ((counter_dst = write(sock_fd,write_buf,counter_src+padding/8)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
-			fprintf(stderr,F_ERROR_SOCKET_WRITE_MSG,strerror(errno));
+		if ((counter_dst = _write(sock_fd,write_buf,counter_src+padding/8)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
+			strerror_s(errmsg, 255, errno);
+			fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, errmsg);
 			return program_end(errno,in_fd,sock_fd);
 		} else if (counter_dst == 0) {
 			break;
@@ -197,13 +208,15 @@ int main (int argc, char *argv[]) {
 	}
 	// Close write socket
 	if (shutdown(sock_fd,SHUT_WR) == -1) { // Upon successful completion, shutdown() shall return 0; otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_SOCKET_SHUTDOWN_MSG,strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_SHUTDOWN_MSG, errmsg);
 		return program_end(errno,in_fd,sock_fd);
 	}
 	// Wait and print the response
-	strcpy(read_buf,"0:0:0");
-	if ((counter_dst = read(sock_fd,read_buf,MAX_BUF)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr,F_ERROR_SOCKET_READ_MSG,strerror(errno));
+	strncpy(read_buf,"0:0:0",5);
+	if ((counter_dst = _read(sock_fd,read_buf,MAX_BUF)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_READ_MSG, errmsg);
 		return program_end(errno,in_fd,sock_fd);
 	}
 	read_buf[counter_dst] = '\0';

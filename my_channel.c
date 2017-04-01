@@ -42,21 +42,26 @@
 //
 
 int program_end(int error, int sender_fd, int reciver_fd, int sender_conn_fd, int reciver_conn_fd) {
+	char errmsg[256];
 	int res = 0;
-	if ((0 < sender_fd)&&(close(sender_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_SOCKET_CLOSE_MSG,strerror(errno));
+	if ((0 < sender_fd)&&(_close(sender_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 		res = errno;
 	}
-	if ((0 < reciver_fd)&&(close(reciver_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_SOCKET_CLOSE_MSG,strerror(errno));
+	if ((0 < reciver_fd)&&(_close(reciver_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 		res = errno;
 	}
-	if ((0 < sender_conn_fd)&&(close(sender_conn_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_SOCKET_CLOSE_MSG,strerror(errno));
+	if ((0 < sender_conn_fd)&&(_close(sender_conn_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 		res = errno;
 	}
-	if ((0 < reciver_conn_fd)&&(close(reciver_conn_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
-		fprintf(stderr,F_ERROR_SOCKET_CLOSE_MSG,strerror(errno));
+	if ((0 < reciver_conn_fd)&&(_close(reciver_conn_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 		res = errno;
 	}
 	if ((error != 0)||(res != 0)) {
@@ -79,6 +84,7 @@ int main(int argc, char *argv[]) {
 	int Rand_seed = 0;				// The input randon seed (type == int)
 	int random_var = 0;				// The random variable created by srand fuction (type == int)
 	int num_bits_fliped = 0;		// count the number of flipped bits.
+	char errmsg[256];
 	float error_p = 0.0;			// The given error probabilty (type == float)
 	struct sockaddr_in serv_addr_sender;	// The data structure for the sender // TODO set back to sender servadd
 	struct sockaddr_in serv_addr_reciver;	// TODO COMPILATION ERROR - storage size of ‘serv_addr_reciver’ isn’t known	// The data structure for the reciver
@@ -125,7 +131,8 @@ int main(int argc, char *argv[]) {
 	// Check sender port
 	sender_port = strtol(argv[1], &sender_endptr_PORT, 10); // If an underflow occurs. strtol() returns LONG_MIN. If an overflow occurs, strtol() returns LONG_MAX. In both cases, errno is set to ERANGE.
 	if ((errno == ERANGE && (sender_port == (int)LONG_MAX || sender_port == (int)LONG_MIN)) || (errno != 0 && sender_port == 0)) {
-		fprintf(stderr, F_ERROR_FUNCTION_STRTOL_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_FUNCTION_STRTOL_MSG, errmsg);
 		return errno;
 	} else if ((sender_endptr_PORT == argv[1]) || (sender_port < 1) || (sender_port > 65535)) { // (Empty string) or (not in range [1,65535])
 		printf(PORT_INVALID_MSG);
@@ -140,7 +147,8 @@ int main(int argc, char *argv[]) {
 	// Check reciver port
 	reciver_port = strtol(argv[2], &reciver_endptr_PORT, 10); // If an underflow occurs. strtol() returns LONG_MIN. If an overflow occurs, strtol() returns LONG_MAX. In both cases, errno is set to ERANGE.
 	if ((errno == ERANGE && (reciver_port == (int)LONG_MAX || reciver_port == (int)LONG_MIN)) || (errno != 0 && reciver_port == 0)) {
-		fprintf(stderr, F_ERROR_FUNCTION_STRTOL_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_FUNCTION_STRTOL_MSG, errmsg);
 		return errno;
 	} else if ((reciver_endptr_PORT == argv[2]) || (reciver_port < 1) || (reciver_port > 65535)) { // (Empty string) or (not in range [1,65535])
 		printf(PORT_INVALID_MSG);
@@ -166,13 +174,15 @@ int main(int argc, char *argv[]) {
 	// Create a TCP socket that listens on sender PORT (use 10 as the parameter for listen).
 	if (DEBUG) { printf("FLAG 0\n"); } // TODO XXX DEBUG - and sender port number
 	if ((sender_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) { // On success, a file descriptor for the new socket is returned. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr, F_ERROR_SOCKET_CREATE_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CREATE_MSG, errmsg);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	// Create a TCP socket that listens on reciver PORT (use 10 as the parameter for listen).
 	if (DEBUG) { printf("FLAG 1\n"); } // TODO XXX DEBUG - and reciver port number
 	if ((reciver_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) { // On success, a file descriptor for the new socket is returned. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr, F_ERROR_SOCKET_CREATE_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_CREATE_MSG, errmsg);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	serv_addr_sender.sin_family = AF_INET;
@@ -182,34 +192,40 @@ int main(int argc, char *argv[]) {
 	//serv_addr.sin_addr.s_addr = inet_addr(argv[1]);//htonl(INADDR_ANY); // INADDR_ANY = any local machine address
 	//sender bind
 	if (bind(sender_fd, (struct sockaddr*)&serv_addr_sender, sizeof(serv_addr_sender)) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr, F_ERROR_SOCKET_BIND_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_BIND_MSG, errmsg);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	// reciver bind - //TODO is this the correct way to bind two sockets?
 	if (bind(reciver_fd, (struct sockaddr*)&serv_addr_reciver, sizeof(serv_addr_reciver)) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr, F_ERROR_SOCKET_BIND_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_BIND_MSG, errmsg);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	// sender listen
 	if (DEBUG) { printf("FLAG 2\n"); } // TODO XXX DEBUG
 	if (listen(sender_fd, 10) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr, F_ERROR_SOCKET_LISTEN_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_LISTEN_MSG, errmsg);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	// reciver listen
 	if (DEBUG) { printf("FLAG 3\n"); } // TODO XXX DEBUG
 	if (listen(reciver_fd, 10) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr, F_ERROR_SOCKET_LISTEN_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_LISTEN_MSG, errmsg);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	// Wait for connection - sender
 	if ((sender_conn_fd = accept(sender_fd, NULL, NULL)) == -1) { // On success, these system calls return a nonnegative integer that is a descriptor for the accepted socket. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr, F_ERROR_SOCKET_ACCEPT_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_ACCEPT_MSG, errmsg);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	// Wait for connection - reciver
 	if ((reciver_conn_fd = accept(reciver_fd, NULL, NULL)) == -1) { // On success, these system calls return a nonnegative integer that is a descriptor for the accepted socket. On error, -1 is returned, and errno is set appropriately.
-		fprintf(stderr, F_ERROR_SOCKET_ACCEPT_MSG, strerror(errno));
+		strerror_s(errmsg, 255, errno);
+		fprintf(stderr, F_ERROR_SOCKET_ACCEPT_MSG, errmsg);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	///////////////////////////////////////////////////////////////////////
@@ -233,16 +249,19 @@ int main(int argc, char *argv[]) {
 			if (DEBUG) { printf("reciver: %s ", serv_addr_reciver); } //print reciver IP adress // TODO DEBUG
 			// b. Read data from the client until EOF.
 			// You cannot assume anything regarding the overall size of the input.
-			if ((counter_input_sender = read(sender_conn_fd, sender_read_buf, MAX_BUF_THEORY)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
-				fprintf(stderr, F_ERROR_SOCKET_READ_MSG, strerror(errno));
+			if ((counter_input_sender = _read(sender_conn_fd, sender_read_buf, MAX_BUF_THEORY)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
+				strerror_s(errmsg, 255, errno);
+				fprintf(stderr, F_ERROR_SOCKET_READ_MSG, errmsg);
 				return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 			} else if (counter_input_sender == 0) {									// recived EOF. preper to land.
 				if ((check = shutdown(reciver_conn_fd, SD_SEND)) == -1) {			// close the connection with reciver to send direction only.  
-					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, strerror(errno));
+					strerror_s(errmsg, 255, errno);
+					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 					return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 				}
 				if ((check = shutdown(sender_conn_fd, SD_RECEIVE)) == -1) {			// close the connection with sender to recive direction only.  
-					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, strerror(errno));
+					strerror_s(errmsg, 255, errno);
+					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 					return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 				}
 				send_to_recv = 0; // close read loop, stop trying to read from the sender. 
@@ -267,8 +286,9 @@ int main(int argc, char *argv[]) {
 			// back from bin
 			bin2str(reciver_bin_to, reciver_write_buf, counter_input_sender*8);
 			// writing the result to reciver.
-			if ((counter_output_reciver = write(reciver_conn_fd, reciver_write_buf, counter_input_sender)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
-				fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, strerror(errno));
+			if ((counter_output_reciver = _write(reciver_conn_fd, reciver_write_buf, counter_input_sender)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
+				strerror_s(errmsg, 255, errno);
+				fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, errmsg);
 				return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 			}
 			if (DEBUG) { printf("FLAG 4 - messege length %d bytes\n", counter_output_reciver); } // TODO XXX DEBUG
@@ -286,16 +306,19 @@ int main(int argc, char *argv[]) {
 			if (DEBUG) { printf("reciver: %s ", serv_addr_sender); } //print reciver (this time the sender) IP adress // TODO DEBUG
 			// b. Read data from the client until EOF.
 			// You cannot assume anything regarding the overall size of the input.
-			if ((counter_input_reciver = read(reciver_conn_fd, reciver_read_buf, MAX_BUF_THEORY)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
-				fprintf(stderr, F_ERROR_SOCKET_READ_MSG, strerror(errno));
+			if ((counter_input_reciver = _read(reciver_conn_fd, reciver_read_buf, MAX_BUF_THEORY)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
+				strerror_s(errmsg, 255, errno);
+				fprintf(stderr, F_ERROR_SOCKET_READ_MSG, errmsg);
 				return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 			} else if (counter_input_reciver == 0) {								// recived EOF. preper to land.
-				if ((check = shutdown(sender_conn_fd, SD_SEND)) == -1) {			// close the connection with sender to send direction only.  
-					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, strerror(errno));
+				if ((check = shutdown(sender_conn_fd, SD_SEND)) == -1) {			// close the connection with sender to send direction only.
+					strerror_s(errmsg, 255, errno);
+					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 					return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 				}
-				if ((check = shutdown(reciver_conn_fd, SD_RECEIVE)) == -1) {		// close the connection with reciver to recive direction only.  
-					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, strerror(errno));
+				if ((check = shutdown(reciver_conn_fd, SD_RECEIVE)) == -1) {		// close the connection with reciver to recive direction only.
+					strerror_s(errmsg, 255, errno);
+					fprintf(stderr, F_ERROR_SOCKET_CLOSE_MSG, errmsg);
 					return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 				}
 
@@ -313,8 +336,9 @@ int main(int argc, char *argv[]) {
 			// back from bin
 			bin2str(sender_bin_to, sender_write_buf, counter_input_reciver*8);
 			// writing the result to reciver.
-			if ((counter_output_sender = write(sender_conn_fd, sender_write_buf, counter_input_reciver)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
-				fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, strerror(errno));
+			if ((counter_output_sender = _write(sender_conn_fd, sender_write_buf, counter_input_reciver)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
+				strerror_s(errmsg, 255, errno);
+				fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, errmsg);
 				return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 			}
 			if (DEBUG) { printf("FLAG 6 - messege length %d bytes\n", counter_output_sender); } // TODO XXX DEBUG

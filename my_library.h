@@ -1,6 +1,6 @@
-#include <stdio.h>	// sscanf
+#include <stdio.h>	// sscanf, snprintf
+#include <stdlib.h>
 #include <string.h>	// strlen
-#include <stdio.h>	// snprintf
 
 #define HAMMING_FROM		11 // In bits // 57 TODO
 #define HAMMING_TO		15 // In bits // 63 TODO
@@ -85,7 +85,7 @@ void printAsBin(char *input,int len,int spaces) {
 }
 void bin2str(char *input,char *output,int input_len) { // strlen(output) === input_len/8;!!!
 	if ((input == NULL)||(input_len%8 != 0)) {
-		strcpy(output,"\0");
+		strncpy(output,"\0",1);
 	}
 	char loop[9];
 	char *ptr;
@@ -98,7 +98,7 @@ void bin2str(char *input,char *output,int input_len) { // strlen(output) === inp
 }
 void str2bin(char *input,char *output,int input_len) { // strlen(output) === 8*input_len;!!!
 	if (input == NULL) {
-		strcpy(output,"00000000");
+		strncpy(output,"00000000",8);
 	}
 	char *ptr = input;
 	int i,j;

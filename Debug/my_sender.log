@@ -1,0 +1,20 @@
+﻿Build started 01/04/2017 17:19:44.
+     1>Project "C:\Users\XqG3X\workspace\IntroductiontoComputerCommunications1\my_sender.vcxproj" on node 2 (Build target(s)).
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(388,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (my_channel.vcxproj, my_receiver.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+     1>Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\XqG3X\workspace\IntroductiontoComputerCommunications1\Debug\my_sender.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\XqG3X\workspace\IntroductiontoComputerCommunications1\Debug\my_sender.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\XqG3X\workspace\IntroductiontoComputerCommunications1\Debug\my_sender.lib" /MACHINE:X86 Debug\my_sender.obj
+     1>my_sender.obj : error LNK2019: unresolved external symbol _snprintf referenced in function _bin2str
+     1>my_sender.obj : error LNK2019: unresolved external symbol __imp__connect@12 referenced in function _main
+     1>my_sender.obj : error LNK2019: unresolved external symbol __imp__htons@4 referenced in function _main
+     1>my_sender.obj : error LNK2019: unresolved external symbol __imp__inet_addr@4 referenced in function _main
+     1>my_sender.obj : error LNK2019: unresolved external symbol __imp__shutdown@8 referenced in function _main
+     1>my_sender.obj : error LNK2019: unresolved external symbol __imp__socket@12 referenced in function _main
+     1>my_sender.obj : error LNK2019: unresolved external symbol _S_ISDIR referenced in function _main
+     1>my_sender.obj : error LNK2019: unresolved external symbol _strtok_r referenced in function _main
+     1>MSVCRTD.lib(crtexew.obj) : error LNK2019: unresolved external symbol _WinMain@16 referenced in function ___tmainCRTStartup
+     1>C:\Users\XqG3X\workspace\IntroductiontoComputerCommunications1\Debug\my_sender.exe : fatal error LNK1120: 9 unresolved externals
+     1>Done Building Project "C:\Users\XqG3X\workspace\IntroductiontoComputerCommunications1\my_sender.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.30
