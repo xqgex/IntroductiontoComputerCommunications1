@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>	// strlen
 
+#pragma comment(lib, "Ws2_32.lib") // some kind of an include in order to compile and link REFERANCE: http://stackoverflow.com/questions/16948064/unresolved-external-symbol-lnk2019
+
 #define HAMMING_FROM		11 // In bits // 57 TODO
 #define HAMMING_TO		15 // In bits // 63 TODO
 #define HAMMING_BINARY_LEN	6 // len(base(63,2))==6;
