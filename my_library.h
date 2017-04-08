@@ -16,8 +16,8 @@
 #define REPORT_CHANNEL			"sender: %s\nreceiver: %s\n%s bytes flipped %s bits\n"
 #define REPORT_RECEIVER			"received: %d bytes\nwrote: %d bytes\ncorrected: %d errors\n"
 #define REPORT_SENDER			"received: %s bytes\nreconstructed: %s bytes\ncorrected: %s errors\n"
-#define USAGE_OPERANDS_MISSING_MSG	"Missing operands\nUsage: %s <IP> <PORT> <%s>\n"
-#define USAGE_OPERANDS_SURPLUS_MSG	"Too many operands\nUsage: %s <IP> <PORT> <%s>\n"
+#define USAGE_OPERANDS_MISSING_MSG	"Missing operands\nUsage: %s%s%s%s%s\n"
+#define USAGE_OPERANDS_SURPLUS_MSG	"Too many operands\nUsage: %s%s%s%s%s\n"
 #define ERROR_EXIT_MSG			"Exiting...\n"
 #define F_ERROR_FUNCTION_LSEEK_MSG	"[Error] lseek() failed with an error: %s\n"
 #define F_ERROR_FUNCTION_SPRINTF_MSG	"[Error] sprintf() failed with an error\n"
@@ -93,7 +93,7 @@ void bin2str(char *input,char *output,int input_len) { // strlen(output) === inp
 	char *ptr;
 	int i,j;
 	for (j=i=0;j<input_len;i++,j+=8) {
-		snprintf(loop,9,"%.*s",8,input+j);
+		_snprintf(loop,9,"%.*s",8,input+j);
 		output[i] = strtol(loop,&ptr,2);
 	}
 	output[input_len/8] = '\0';

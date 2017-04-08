@@ -95,10 +95,10 @@ int main(int argc, char *argv[]) {
 	// Check correct call structure
 	if (argc != 4) {
 		if (argc < 4) {
-			printf(USAGE_OPERANDS_MISSING_MSG, argv[0], "IN");
+			printf(USAGE_OPERANDS_MISSING_MSG, argv[0], " <IP>", " <PORT>", " <IN>", "");
 		}
 		else {
-			printf(USAGE_OPERANDS_SURPLUS_MSG, argv[0], "IN");
+			printf(USAGE_OPERANDS_SURPLUS_MSG, argv[0], " <IP>", " <PORT>", " <IN>", "");
 		}
 		return EXIT_FAILURE;
 	}
@@ -128,6 +128,7 @@ int main(int argc, char *argv[]) {
 	}
 	// Check input file - ||We can not assume anything regarding the size of IN.||
 	if ((in_fd = fopen(argv[3], "rb")) == NULL) { // Upon successful completion, ... return a non-negative integer .... Otherwise, -1 shall be returned and errno set to indicate the error.
+		strerror_s(errmsg, 255, errno);
 		fprintf(stderr, F_ERROR_INPUT_FILE_MSG, argv[3], errmsg); // IN must exist, otherwise output an error and exit.
 		return program_end(errno, in_fd, sock_fd);
 	}
@@ -208,7 +209,6 @@ int main(int argc, char *argv[]) {
 						for (jndx = 0; jndx<HAMMING_BINARY_LEN; jndx++) { // Foreach bit
 							if (indxBinary[jndx] == 1) {			  // If it's one
 								bin_to[(padding*HAMMING_TO) + (int)pow(2, jndx) - 1] ^= 1; // XOR
-	
 							}
 						}
 					}

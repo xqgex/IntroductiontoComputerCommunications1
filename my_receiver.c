@@ -86,10 +86,10 @@ int main(int argc, char *argv[]) {
 	// Check correct call structure
 	if (argc != 4) {
 		if (argc < 4) {
-			printf(USAGE_OPERANDS_MISSING_MSG, argv[0], "OUT");
+			printf(USAGE_OPERANDS_MISSING_MSG, argv[0], " <IP>", " <PORT>", " <OUT>", "");
 		}
 		else {
-			printf(USAGE_OPERANDS_SURPLUS_MSG, argv[0], "OUT");
+			printf(USAGE_OPERANDS_SURPLUS_MSG, argv[0], " <IP>", " <PORT>", " <OUT>", "");
 		}
 		return EXIT_FAILURE;
 	}
@@ -197,7 +197,21 @@ int main(int argc, char *argv[]) {
 		str2bin(read_buf, bin_from, counter_client);
 		padding = 0;
 		while ((padding + 1)*HAMMING_TO <= counter_client * 8) {
-			strncpy(bin_to + (padding*HAMMING_FROM), bin_from + (padding*HAMMING_TO), HAMMING_FROM);
+			/*bin_from_count = 0;
+			for (indx = 0; indx<HAMMING_TO; indx++) {
+				if (decimalToBinary(indx + 1, indxBinary) != 1) { // Data bit - calculate XOR for relevants parity bits
+					if (bin_from[(padding*HAMMING_FROM) + bin_from_count] == '1') { // If value is one
+						for (jndx = 0; jndx<HAMMING_BINARY_LEN; jndx++) { // Foreach bit
+							if (indxBinary[jndx] == 1) {			  // If it's one
+								bin_to[(padding*HAMMING_TO) + (int)pow(2, jndx) - 1] ^= 1; // XOR
+							}
+						}
+					}
+					bin_to[(padding*HAMMING_TO) + indx] = bin_from[(padding*HAMMING_FROM) + bin_from_count];
+					//if (DEBUG) {printf("b[%d]=b[%d];\n",(padding*HAMMING_TO)+indx,(padding*HAMMING_FROM)+bin_from_count);} // TODO XXX DEBUG
+					bin_from_count++;
+				}
+			}*/
 			padding += 1;
 		}
 		padding *= HAMMING_TO - HAMMING_FROM;

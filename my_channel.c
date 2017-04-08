@@ -118,10 +118,10 @@ int main(int argc, char *argv[]) {
 	// Check correct call structure
 	if (argc != 5) {
 		if (argc < 5) {
-			printf(USAGE_OPERANDS_MISSING_MSG, argv[0], "SEED");
+			printf(USAGE_OPERANDS_MISSING_MSG, argv[0], " <SENDER PORT>", " <RECIVER PORT>", " <PROBABILITY>", " <SEED>");
 		}
 		else {
-			printf(USAGE_OPERANDS_SURPLUS_MSG, argv[0], "SEED");
+			printf(USAGE_OPERANDS_SURPLUS_MSG, argv[0], " <SENDER PORT>", " <RECIVER PORT>", " <PROBABILITY>", " <SEED>");
 		}
 		return EXIT_FAILURE;
 	}
