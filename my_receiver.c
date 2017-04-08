@@ -59,12 +59,16 @@ int program_end(int error, int out_fd, int channel_fd) {
 int main(int argc, char *argv[]) {
 	// Function variables
 	int input_port = 0;			// The channel port (type == int)
-	FILE* out_fd = 0;				// The output file 'file descriptor' (FD)
-	SOCKET channel_fd = 0;			// The channel file descriptor (FD)
+	int indx = 0;				// Temporary loop index (traditionally 'i')
+	int jndx = 0;				// Temporary loop index (traditionally 'j')
+	int indxBinary[HAMMING_BINARY_LEN];	// The binary representation of 'indx' as array of ints
+	int errorBinary[HAMMING_BINARY_LEN];
+	int loop_count1 = 0;
+	int loop_count2 = 0;
 	int counter_client = 0;			// The number of bytes we read from the client
 	int counter_dst = 0;			// The number of bytes we wrote to output
 	int padding = 0;			// The amount of padding chars that been have added
-	int report[] = { 0,0,0 };			// The 3 values for the report
+	int report[] = { 0,0,0 };		// The 3 values for the report
 	char errmsg[256];
 	char input_port_char[6];		// The channel port (type == string)
 	char read_buf[MAX_BUF_THEORY + 1];	// The string buffer got from the channel
@@ -72,12 +76,13 @@ int main(int argc, char *argv[]) {
 	char bin_to[8 * MAX_BUF + 1];		// The binary representation after hamming calculation
 	char write_buf[MAX_BUF + 1];		// The string buffer to be writen to the output
 	char* endptr_PORT;			// strtol() for 'input_port'
+	FILE* out_fd = 0;			// The output file 'file descriptor' (FD)
+	SOCKET channel_fd = 0;			// The channel file descriptor (FD)
 	struct sockaddr_in serv_addr;		// The data structure for the channel
-	WORD wVersionRequested;					//win' sockets variables. 
-	WSADATA wsaData;						//win' sockets variables. 
-	int err;								//win' sockets variables. 
-
-											// Init variables
+	WORD wVersionRequested;			//win' sockets variables.
+	WSADATA wsaData;			//win' sockets variables.
+	int err;				//win' sockets variables.
+	// Init variables
 	memset(bin_from, '0', sizeof(bin_from));
 	memset(bin_to, '0', sizeof(bin_to));
 	memset(read_buf, '0', sizeof(read_buf));
@@ -124,29 +129,23 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, F_ERROR_OUTPUT_FILE_MSG, argv[3], errmsg);// The path to the OUT file must exist, otherwise output an error and exit. (i.e., no need to check the folder, just try to open/create the file).
 		return program_end(errno, out_fd, channel_fd); // If OUT does not exist, the client should create it. If it exists, it should truncate it.
 	}
-
 	/// start up - windows sockets 
 	// the next few lines regarding the windows sockets initiation
 	// is based on the code from the offital microsoft documentation. 
 	// source - https://msdn.microsoft.com/en-us/library/windows/desktop/ms742213(v=vs.85).aspx
-
 	/* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
-
 	wVersionRequested = MAKEWORD(2, 2);
-
 	err = WSAStartup(wVersionRequested, &wsaData);
 	if (err != 0) {
 		printf("WSAStartup failed with error: %d\n", err);
 		printf(F_ERROR_SOCKET_CREATE_MSG);
 		return EXIT_FAILURE;
 	}
-
 	/* Confirm that the WinSock DLL supports 2.2.*/
 	/* Note that if the DLL supports versions greater    */
 	/* than 2.2 in addition to 2.2, it will still return */
 	/* 2.2 in wVersion since that is the version we      */
 	/* requested.                                        */
-
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
 		/* Tell the user that we could not find a usable */
 		/* WinSock DLL.                                  */
@@ -154,8 +153,6 @@ int main(int argc, char *argv[]) {
 		WSACleanup();
 		return 1;
 	}
-
-
 	// Create a TCP socket that listens on PORT (use 10 as the parameter for listen).
 	if (DEBUG) { printf("the reciver \n FLAG 0\n"); } // TODO XXX DEBUG
 	if ((channel_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) { // On success, a file descriptor for the new socket is returned. On error, -1 is returned, and errno is set appropriately.
@@ -166,19 +163,17 @@ int main(int argc, char *argv[]) {
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(input_port);
 	serv_addr.sin_addr.s_addr = inet_addr(argv[1]);//htonl(INADDR_ANY); // INADDR_ANY = any local machine address
-
 	if (connect(channel_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1) { // On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
 		strerror_s(errmsg, 255, errno);
 		fprintf(stderr, F_ERROR_SOCKET_BIND_MSG, errmsg);
 		return program_end(errno, out_fd, channel_fd);
 	}
 	if (DEBUG) { printf("connection with channel astablished \n"); }
-
 	write_buf[0] = '\0';
 	while (1) {
 		if (DEBUG) { printf("FLAG 2\n"); } // TODO XXX DEBUG
-										   // b. Read data from the client until EOF.
-										   // You cannot assume anything regarding the overall size of the input.
+		// b. Read data from the client until EOF.
+		// You cannot assume anything regarding the overall size of the input.
 		if ((counter_client = recv(channel_fd, read_buf, MAX_BUF_THEORY, 0)) == SOCKET_ERROR) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
 			strerror_s(errmsg, 255, errno);
 			fprintf(stderr, F_ERROR_SOCKET_READ_MSG, errmsg);
@@ -189,29 +184,48 @@ int main(int argc, char *argv[]) {
 			break;
 		}
 		if (DEBUG) { printf("FLAG 3 - Receive %d chars\n", counter_client); } // TODO XXX DEBUG
-																			  // Decode hamming code (63,57) // TODO
-																			  // len(read_buf)  = counter_client;
-																			  // len(bin_from)  = counter_client*8;
-																			  // len(bin_to)    = counter_client*8 - padding;
-																			  // len(write_buf) = counter_client   - padding/8;
+		// Decode hamming code (63,57) // TODO
+		// len(read_buf)  = counter_client;
+		// len(bin_from)  = counter_client*8;
+		// len(bin_to)    = counter_client*8 - padding;
+		// len(write_buf) = counter_client   - padding/8;
 		str2bin(read_buf, bin_from, counter_client);
 		padding = 0;
 		while ((padding + 1)*HAMMING_TO <= counter_client * 8) {
-			/*bin_from_count = 0;
+			bin_to_count = 0;
+			memset(errorBinary, 0, sizeof(errorBinary));
 			for (indx = 0; indx<HAMMING_TO; indx++) {
-				if (decimalToBinary(indx + 1, indxBinary) != 1) { // Data bit - calculate XOR for relevants parity bits
-					if (bin_from[(padding*HAMMING_FROM) + bin_from_count] == '1') { // If value is one
-						for (jndx = 0; jndx<HAMMING_BINARY_LEN; jndx++) { // Foreach bit
-							if (indxBinary[jndx] == 1) {			  // If it's one
-								bin_to[(padding*HAMMING_TO) + (int)pow(2, jndx) - 1] ^= 1; // XOR
-							}
+				loop_count1 = decimalToBinary(indx + 1, indxBinary);
+				if (bin_from[(padding*HAMMING_TO) + indx] == '1') { // If value is one
+					for (jndx = 0; jndx<HAMMING_BINARY_LEN; jndx++) { // Foreach bit
+						if (indxBinary[jndx] == 1) { // If it's one
+							errorBinary[jndx] ^= 1; // XOR
 						}
 					}
-					bin_to[(padding*HAMMING_TO) + indx] = bin_from[(padding*HAMMING_FROM) + bin_from_count];
-					//if (DEBUG) {printf("b[%d]=b[%d];\n",(padding*HAMMING_TO)+indx,(padding*HAMMING_FROM)+bin_from_count);} // TODO XXX DEBUG
-					bin_from_count++;
 				}
-			}*/
+				if (loop_count1 != 1) { // Data bit - calculate XOR for relevants parity bits
+					bin_to[(padding*HAMMING_FROM) + bin_to_count] = bin_from[(padding*HAMMING_TO) + indx];
+					//if (DEBUG) {printf("b[%d]=b[%d];\n",(padding*HAMMING_TO)+indx,(padding*HAMMING_FROM)+bin_to_count);} // TODO XXX DEBUG
+					bin_to_count++;
+				}
+			}
+			// Check for error
+			loop_count1 = 0;
+			loop_count2 = 0;
+			for (jndx = 0; jndx<HAMMING_BINARY_LEN; jndx++) { // Foreach bit
+				loop_count1 += errorBinary[jndx]*(int)pow(2, jndx);
+			}
+			for (jndx = 0; jndx<HAMMING_BINARY_LEN; jndx++) { // Foreach bit
+				if ((int)pow(2, jndx) < loop_count1) {
+					loop_count2 += 1;
+				}
+			}
+			if (1 < loop_count1) { // We found error, And it's not in one of the parity bits
+				report[2] += 1; // corrected
+				bin_to[padding*HAMMING_FROM + loop_count1-loop_count2-1] ^= 1; // XOR
+				if (DEBUG) { printf("bin_from:%.*s - ",HAMMING_TO,&bin_from[padding*HAMMING_TO]); } // TODO XXX DEBUG
+				if (DEBUG) { printf("errorBinary:[%d,%d,%d,%d,%d,%d] = %d\n",errorBinary[0],errorBinary[1],errorBinary[2],errorBinary[3],errorBinary[4],errorBinary[5],loop_count1-loop_count2-1); } // TODO XXX DEBUG
+			}
 			padding += 1;
 		}
 		padding *= HAMMING_TO - HAMMING_FROM;
@@ -225,17 +239,15 @@ int main(int argc, char *argv[]) {
 		}
 		report[0] += counter_client; // received
 		report[1] += counter_dst; // reconstructed/wrote
-		report[2] += 1; // corrected // TODO
 		if (DEBUG) { printf("FLAG 4 - Write %d chars - %.*s (%d in total)\n", counter_dst, counter_dst, write_buf, report[1]); } // TODO XXX DEBUG
 	}
 	if (DEBUG) { printf("FLAG 5 - Received shutdown()\n"); } // TODO XXX DEBUG
-															 // When 'read socket' closed, Write the report to the channel
+	// When 'read socket' closed, Write the report to the channel
 	if (sprintf(write_buf, "%d:%d:%d%c", report[0], report[1], report[2], '\0') < 0) { // sprintf(), If an output error is encountered, a negative value is returned.
 		fprintf(stderr, F_ERROR_FUNCTION_SPRINTF_MSG);
 		return program_end(errno, out_fd, channel_fd);
 	}
 	if (DEBUG) { printf("FLAG 6 - %s ~ %ld\n", write_buf, strlen(write_buf)); } // TODO XXX DEBUG
-
 	if ((counter_dst = send(channel_fd, write_buf, strlen(write_buf), 0)) == -1) { // On success, the number of bytes written is returned (zero indicates nothing was written). On error, -1 is returned, and errno is set appropriately.
 		strerror_s(errmsg, 255, errno);
 		//fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, errmsg);
