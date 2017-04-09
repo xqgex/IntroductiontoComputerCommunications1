@@ -4,10 +4,10 @@
 
 #pragma comment(lib, "Ws2_32.lib") // some kind of an include in order to compile and link REFERANCE: http://stackoverflow.com/questions/16948064/unresolved-external-symbol-lnk2019
 
-#define HAMMING_FROM		11 // In bits // 57 TODO
-#define HAMMING_TO		15 // In bits // 63 TODO
+#define HAMMING_FROM		57 // In bits
+#define HAMMING_TO		63 // In bits
 #define HAMMING_BINARY_LEN	6 // len(base(63,2))==6;
-#define MAX_BUF_THEORY		30 // In bytes // 4095 TODO
+#define MAX_BUF_THEORY		4095 // In bytes
 #define MAX_BUF			(MAX_BUF_THEORY*HAMMING_FROM)/HAMMING_TO	// In bytes, =3705
 
 // Define printing strings
@@ -39,8 +39,6 @@
 #define F_ERROR_SOCKET_READ_MSG		"[Error] Reading from socket: %s\n"
 #define F_ERROR_SOCKET_SHUTDOWN_MSG	"[Error] Shutdown socket: %s\n"
 #define F_ERROR_SOCKET_WRITE_MSG	"[Error] Writing to socket: %s\n"
-
-#define DEBUG 1 // TODO XXX DEBUG
 
 #ifndef SHUT_RDWR
 	#define SHUT_RD   0x00
