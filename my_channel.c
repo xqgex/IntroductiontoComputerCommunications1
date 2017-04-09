@@ -315,8 +315,7 @@ int main(int argc, char *argv[]) {
 	}
 	//print the messege info 
 	inet_ntop(AF_INET, &tmp_sender.sin_addr, senderIP, 1024);
-	//inet_ntop(AF_INET,&tmp_sender.sin_addr, senderIP,1024);
-	//inet_ntop(AF_INET, &tmp_reciver.sin_addr, reciverIP, 1024);
+	inet_ntop(AF_INET, &tmp_reciver.sin_addr, reciverIP, 1024);
 	printf("sender: %s \n", senderIP);
 	printf("reciver: %s \n",reciverIP);
 	printf("%d bytes fliped %d bits\n", total_counter, num_bits_fliped);
