@@ -90,10 +90,13 @@ int main(int argc, char *argv[]) {
 	char sender_bin_from[8 * MAX_BUF_THEORY + 1];	// The binary representation of 'sender_read_buf'
 	char reciver_bin_from[8 * MAX_BUF_THEORY + 1];	// The binary representation of 'reciver_read_buf'
 	char* sender_endptr_PORT;						// strtol() for 'sender_port'
-													// output variables (sender and reciver)
+	char senderIP[1024] = { 0 };
+	char reciverIP[1024] = { 0 };
+	// output variables (sender and reciver)
 	SOCKET reciver_conn_fd = 0;						// The output connection file 'file descriptor' (FD)
 	int counter_output_sender = 0;					// The number of bytes we send to the sender
 	int counter_output_reciver = 0;					// The number of bytes we send to the reciver
+	int total_counter = 0;							// The number of bytes we send in total.
 	char reciver_port_char[6];						// The output port (type == string)
 	char sender_write_buf[MAX_BUF_THEORY + 1];		// The string buffer send to the sender
 	char reciver_write_buf[MAX_BUF_THEORY + 1];		// The string buffer send to the reciver
@@ -249,6 +252,7 @@ int main(int argc, char *argv[]) {
 										 //////////                        //////////
 										 ////////////////////////////////////////////
 	srand(Rand_seed);
+	num_bits_fliped = 0;
 	while (1) { // while sending.
 		if ((counter_input_sender = recv(sender_conn_fd, sender_read_buf, MAX_BUF_THEORY, 0)) == -1) { // On success, the number of bytes read is returned (zero indicates end of file), .... On error, -1 is returned, and errno is set appropriately.
 			fprintf(stderr, F_ERROR_SOCKET_READ_MSG, strerror(errno));
@@ -261,13 +265,13 @@ int main(int argc, char *argv[]) {
 			// leave reading loop
 			break;
 		}
+		total_counter += counter_input_sender;
 		sender_read_buf[counter_input_sender] = '\0'; // put an end to it. 
 		// to bin
 		str2bin(sender_read_buf, sender_bin_from, counter_input_sender);
 		// turn over bytes in given ratio.
 		// set random seed.
 		// turn
-		num_bits_fliped = 0;
 		for (i = 0; i < counter_input_sender * 8; i++) {
 			random_var = ((double)rand() / RAND_MAX);
 			if (random_var <= error_p) {
@@ -284,10 +288,6 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, F_ERROR_SOCKET_WRITE_MSG, strerror(errno));
 			return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 		}
-		//print the messege info 
-		printf("sender: %s \n", inet_ntoa(tmp_sender.sin_addr));
-		printf("reciver: %s \n", inet_ntoa(tmp_reciver.sin_addr));
-		printf("%d bytes fliped %d bits\n", counter_output_reciver, num_bits_fliped);
 	} // end of first while. 
 	  ////////////////////////////////////////////
 	  //////////                        //////////
@@ -298,11 +298,11 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, F_ERROR_SOCKET_READ_MSG, strerror(errno));
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
+	total_counter += counter_input_reciver;
 	// to bin
 	str2bin(reciver_read_buf, reciver_bin_from, counter_input_reciver);
 	// turn over bytes in given ratio.
 	// turn
-	num_bits_fliped = 0;
 	for (i = 0; i < counter_input_reciver * 8; i++) {
 		sender_bin_to[i] = reciver_bin_from[i]; // in this diraction, no filiping gets done.
 	}
@@ -314,9 +314,12 @@ int main(int argc, char *argv[]) {
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
 	//print the messege info 
-	printf("sender: %s \n", inet_ntoa(tmp_reciver.sin_addr));
-	printf("reciver: %s \n", inet_ntoa(tmp_sender.sin_addr));
-	printf("%d bytes fliped %d bits\n", counter_output_sender, num_bits_fliped);
+	inet_ntop(AF_INET, &tmp_sender.sin_addr, senderIP, 1024);
+	//inet_ntop(AF_INET,&tmp_sender.sin_addr, senderIP,1024);
+	//inet_ntop(AF_INET, &tmp_reciver.sin_addr, reciverIP, 1024);
+	printf("sender: %s \n", senderIP);
+	printf("reciver: %s \n",reciverIP);
+	printf("%d bytes fliped %d bits\n", total_counter, num_bits_fliped);
 	//close rammaing fd and so on.
 	return program_end(EXIT_SUCCESS, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);;
 }
