@@ -35,7 +35,7 @@
 int program_end(int error, int out_fd, int channel_fd) {
 	char errmsg[256];
 	int res = 0;
-	if ((0 < out_fd)&(fclose(out_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+	if ((0 < out_fd)&&(fclose(out_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
 		strerror_s(errmsg, 255, errno);
 		fprintf(stderr, F_ERROR_OUTPUT_CLOSE_MSG, errmsg);
 		res = errno;

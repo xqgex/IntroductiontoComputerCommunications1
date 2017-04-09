@@ -38,7 +38,7 @@
 int program_end(int error, int in_fd, int sock_fd) {
 	char errmsg[256];
 	int res = 0;
-	if ((0 < in_fd)&(fclose(in_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+	if ((0 < in_fd) && (fclose(in_fd) == -1)) { // Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
 		fprintf(stderr, F_ERROR_INPUT_CLOSE_MSG, errmsg);
 		res = errno;
 	}
