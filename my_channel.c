@@ -8,6 +8,10 @@
 #include "my_library.h"	// validateIP4Dotted
 #include <winsock2.h>	// windows sockets include
 #include <stdint.h>
+#include <Ws2tcpip.h>
+//#include <windows.h>
+
+//#include <arpa/inet.h>
 #define SEED_INV "seed parsing faild due to bad input or diffrent error \n"
 #define ERRPR_P_MSG "error probebility parsing faild due to bad input or diffrent error \n"
 #pragma comment(lib, "Ws2_32.lib") // some kind of an include in order to compile and link REFERANCE: http://stackoverflow.com/questions/16948064/unresolved-external-symbol-lnk2019
@@ -228,13 +232,20 @@ int main(int argc, char *argv[]) {
 	// TODO - move up to place 
 	struct sockaddr_in tmp_reciver;
 	struct sockaddr_in tmp_sender;
+	int* len_reciver; 
+	int len_reciver_int = sizeof(tmp_reciver);
+	len_reciver = &len_reciver_int;
+	int* len_sender;
+	int len_sender_int = sizeof(tmp_sender);
+	len_sender = &len_sender_int;
+	
 	// Wait for connection - reciver
-	if ((reciver_conn_fd = accept(reciver_fd, (SOCKADDR*)&tmp_reciver, NULL)) == -1) { // On success, these system calls return a nonnegative integer that is a descriptor for the accepted socket. On error, -1 is returned, and errno is set appropriately.
+	if ((reciver_conn_fd = accept(reciver_fd, (SOCKADDR*)&tmp_reciver, len_reciver)) == -1) { // On success, these system calls return a nonnegative integer that is a descriptor for the accepted socket. On error, -1 is returned, and errno is set appropriately.
 		fprintf(stderr, F_ERROR_SOCKET_ACCEPT_MSG, ""/*TODO*/);
-		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
+		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, len_sender);
 	}
 	// Wait for connection - sender
-	if ((sender_conn_fd = accept(sender_fd, (SOCKADDR*)&tmp_sender, NULL)) == -1) { // On success, these system calls return a nonnegative integer that is a descriptor for the accepted socket. On error, -1 is returned, and errno is set appropriately.
+	if ((sender_conn_fd = accept(sender_fd, (SOCKADDR*)&tmp_sender, len_sender)) == -1) { // On success, these system calls return a nonnegative integer that is a descriptor for the accepted socket. On error, -1 is returned, and errno is set appropriately.
 		fprintf(stderr, F_ERROR_SOCKET_ACCEPT_MSG, ""/*TODO*/);
 		return program_end(errno, sender_fd, reciver_fd, sender_conn_fd, reciver_conn_fd);
 	}
